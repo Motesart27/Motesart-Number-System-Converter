@@ -50,6 +50,8 @@ interface UploadedFile {
   key?: string;
   result?: ConversionResult;
   timestamp: Date;
+  file?: File;
+  errorMessage?: string;
 }
 
 function MotesartSymbol({ symbol }: { symbol: string }) {
@@ -105,6 +107,7 @@ export default function Dashboard() {
       type: f.type,
       status: 'uploaded' as const,
       timestamp: new Date(),
+      file: f,
     }));
     setUploadedFiles(prev => [...newFiles, ...prev]);
     if (newFiles.length > 0) {
@@ -126,46 +129,92 @@ export default function Dashboard() {
   };
 
   const handleConvert = useCallback(async () => {
-    if (mode === 'manual' && !manualInput.trim()) return;
     setIsProcessing(true);
     try {
-      const input = mode === 'manual' ? manualInput : '';
-      if (!input) {
-        // For uploaded files, we'd need Gemini AI to extract text first
-        // For now, show a message
-        setIsProcessing(false);
-        return;
-      }
-      const options: Record<string, string> = {};
-      if (selectedKey !== 'Auto-detect') options.key = selectedKey;
-      
-      const res = await fetch('/api/convert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input, ...options }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setActiveResult(result);
-        setActiveFileName(mode === 'manual' ? 'Manual Entry' : activeFileName);
-        // Save to Airtable
-        fetch('/api/conversions', {
+      if (mode === 'manual') {
+        // Manual text conversion
+        if (!manualInput.trim()) { setIsProcessing(false); return; }
+        const options: Record<string, string> = {};
+        if (selectedKey !== 'Auto-detect') options.key = selectedKey;
+
+        const res = await fetch('/api/convert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            inputText: input,
-            outputJson: result,
-            keyUsed: result.key?.tonic || 'C',
-            timeSignature: '4/4',
-          }),
-        }).catch(() => {}); // fire and forget
+          body: JSON.stringify({ input: manualInput, ...options }),
+        });
+        const result = await res.json();
+        if (res.ok) {
+          setActiveResult(result);
+          setActiveFileName('Manual Entry');
+          fetch('/api/conversions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              inputText: manualInput,
+              outputJson: result,
+              keyUsed: result.key?.tonic || 'C',
+              timeSignature: '4/4',
+            }),
+          }).catch(() => {});
+        }
+      } else {
+        // File upload processing via Gemini
+        const fileToProcess = uploadedFiles.find(f => f.file && f.status === 'uploaded');
+        if (!fileToProcess || !fileToProcess.file) {
+          setIsProcessing(false);
+          return;
+        }
+
+        // Update file status to processing
+        setUploadedFiles(prev => prev.map(f =>
+          f.name === fileToProcess.name ? { ...f, status: 'processing' as const } : f
+        ));
+
+        const formData = new FormData();
+        formData.append('file', fileToProcess.file);
+        if (selectedKey !== 'Auto-detect') {
+          formData.append('key', selectedKey);
+        }
+
+        const res = await fetch('/api/process', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await res.json();
+
+        if (res.ok) {
+          setActiveResult(result);
+          setActiveFileName(fileToProcess.name);
+          setUploadedFiles(prev => prev.map(f =>
+            f.name === fileToProcess.name
+              ? { ...f, status: 'converted' as const, key: result.key?.tonic, result }
+              : f
+          ));
+          // Save to Airtable
+          fetch('/api/conversions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              inputText: result.extractedText || fileToProcess.name,
+              outputJson: result,
+              keyUsed: result.key?.tonic || 'C',
+              timeSignature: '4/4',
+            }),
+          }).catch(() => {});
+        } else {
+          setUploadedFiles(prev => prev.map(f =>
+            f.name === fileToProcess.name
+              ? { ...f, status: 'error' as const, errorMessage: result.error }
+              : f
+          ));
+        }
       }
     } catch (err) {
       console.error('Conversion error:', err);
     } finally {
       setIsProcessing(false);
     }
-  }, [mode, manualInput, selectedKey, activeFileName]);
+  }, [mode, manualInput, selectedKey, uploadedFiles]);
 
   const handleExport = (format: 'pdf' | 'csv' | 'text') => {
     if (!activeResult) return;
