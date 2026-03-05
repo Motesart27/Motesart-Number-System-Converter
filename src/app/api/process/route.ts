@@ -121,7 +121,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send to Gemini Vision API for full SOM conversion
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    // Use gemini-1.5-flash for faster processing (vision-capable, no thinking overhead)
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    console.log(`[process] Sending ${(base64Data.length / 1024).toFixed(0)}KB base64 to Gemini 1.5 Flash...`);
 
     // Use AbortController for a 55-second timeout (leaving headroom for function limit)
     const controller = new AbortController();
@@ -157,6 +160,7 @@ export async function POST(request: NextRequest) {
     } catch (fetchError) {
       clearTimeout(timeout);
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[process] Gemini request timed out after 55s');
         return NextResponse.json(
           { error: 'Processing timed out. The file may be too large — try a smaller PDF or image.' },
           { status: 504 }
@@ -167,9 +171,11 @@ export async function POST(request: NextRequest) {
       clearTimeout(timeout);
     }
 
+    console.log(`[process] Gemini response status: ${geminiResponse.status}`);
+
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      console.error('Gemini SOM conversion error:', errorText);
+      console.error('[process] Gemini API error:', errorText.substring(0, 500));
       return NextResponse.json(
         { error: 'Failed to process music file', details: errorText },
         { status: 500 }
@@ -178,8 +184,12 @@ export async function POST(request: NextRequest) {
 
     const geminiData = await geminiResponse.json();
     const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const finishReason = geminiData.candidates?.[0]?.finishReason;
+
+    console.log(`[process] Gemini returned ${rawText ? rawText.length : 0} chars, finishReason: ${finishReason}`);
 
     if (!rawText) {
+      console.error('[process] No text in Gemini response. Full response:', JSON.stringify(geminiData).substring(0, 500));
       return NextResponse.json(
         { error: 'Could not extract musical content from this file.' },
         { status: 422 }
@@ -189,11 +199,22 @@ export async function POST(request: NextRequest) {
     // Parse the JSON response from Gemini
     let somResult;
     try {
-      // Clean potential markdown fences
-      const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Clean potential markdown fences and BOM
+      let cleaned = rawText.replace(/^\uFEFF/, '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Handle case where Gemini wraps in array
+      if (cleaned.startsWith('[') && !cleaned.startsWith('[{')) {
+        cleaned = cleaned;
+      }
       somResult = JSON.parse(cleaned);
-    } catch {
-      console.error('Failed to parse Gemini JSON:', rawText);
+      // If Gemini returned an array, take the first element
+      if (Array.isArray(somResult)) {
+        somResult = somResult[0];
+      }
+      console.log(`[process] Successfully parsed SOM result: ${somResult.title || 'untitled'}, ${somResult.sections?.length || 0} sections`);
+    } catch (parseErr) {
+      console.error('[process] JSON parse failed. Error:', parseErr instanceof Error ? parseErr.message : 'unknown');
+      console.error('[process] First 200 chars of rawText:', rawText.substring(0, 200));
+      console.error('[process] Last 200 chars of rawText:', rawText.substring(rawText.length - 200));
       return NextResponse.json(
         { error: 'AI produced invalid output. Please try again.' },
         { status: 500 }
