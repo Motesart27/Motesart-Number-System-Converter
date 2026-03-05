@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOM Teaching Edition PDF Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111827;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .page {
+    width: 8.5in;
+    min-height: 11in;
+    background: #020617;
+    color: #e2e8f0;
+    padding: 48px 56px;
+    border-radius: 4px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle top accent line */
+  .page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #06b6d4, #f97316);
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+
+  .title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 2px;
+  }
+
+  .title .accent { color: #6366f1; }
+
+  .subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-bottom: 12px;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 28px;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .meta-row .label {
+    font-weight: 700;
+    color: #e2e8f0;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 28px;
+  }
+
+  .section-header {
+    border-bottom: 1px solid #334155;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .section-title .key-badge {
+    color: #06b6d4;
+  }
+
+  .scale-ref {
+    margin-top: 6px;
+  }
+
+  .scale-ref .label {
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .scale-ref .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  /* Subsection */
+  .subsection {
+    margin-bottom: 16px;
+  }
+
+  .subsection-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+  }
+
+  /* Lines */
+  .chord-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #06b6d4;
+    background: rgba(30, 41, 59, 0.4);
+    padding: 6px 14px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+
+  .lyrics-line {
+    font-size: 12px;
+    color: #94a3b8;
+    padding-left: 14px;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .nc-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #64748b;
+    padding-left: 14px;
+    margin-bottom: 1px;
+  }
+
+  .nc-lyrics {
+    font-size: 12px;
+    color: #94a3b8;
+    padding-left: 14px;
+    margin-bottom: 6px;
+  }
+
+  .notes-box {
+    background: rgba(30, 41, 59, 0.3);
+    padding: 8px 14px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+
+  .notes-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #a855f7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .notes-original {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  .notes-som {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f97316;
+    margin-top: 3px;
+  }
+
+  /* Footer */
+  .footer {
+    position: absolute;
+    bottom: 30px;
+    left: 56px;
+    right: 56px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #475569;
+    border-top: 1px solid #1e293b;
+    padding-top: 12px;
+  }
+
+  /* Key change divider */
+  .key-change {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 16px;
+  }
+
+  .key-change::before,
+  .key-change::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+  }
+
+  .key-change .badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #818cf8;
+    background: #6366f1/15;
+    padding: 3px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="title">African Medley <span class="accent">&mdash;</span> <span style="font-weight:400;font-size:16px;color:#94a3b8">SOM Teaching Edition</span></div>
+    <div class="meta-row">
+      <span><span class="label">Keys:</span> F → F# → G</span>
+      <span><span class="label">Meter:</span> 4/4</span>
+      <span><span class="label">Tempo:</span> 125</span>
+      <span><span class="label">Artist:</span> Tye Tribbet</span>
+    </div>
+  </div>
+
+  <!-- Section 1: Key of F -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">African Medley <span class="accent">&mdash;</span> <span class="key-badge">Key: 1 = F</span></div>
+      <div class="scale-ref">
+        <div class="label">Scale Reference</div>
+        <div class="value">1(F)  2(G)  3(A)  4(Bb)  5(C)  6(D)  7(E)</div>
+      </div>
+    </div>
+
+    <!-- Intro -->
+    <div class="subsection">
+      <div class="subsection-name">Intro</div>
+      <div class="nc-line">N.C.</div>
+      <div class="nc-lyrics">Eh oh wey yahweh oh wey oh wey yahweh oh wey yah</div>
+      <div class="nc-line">N.C.</div>
+      <div class="nc-lyrics">Eh oh wey yahweh oh wey oh wey yahweh oh wey yah (wey yah)</div>
+    </div>
+
+    <!-- Chorus 1 -->
+    <div class="subsection">
+      <div class="subsection-name">Chorus 1</div>
+      <div class="chord-line">1  4  5  4</div>
+      <div class="lyrics-line">Eh eh eh eh My God is good oh</div>
+      <div class="chord-line">1  4  5  4</div>
+      <div class="lyrics-line">Eh eh eh eh My God is good oh</div>
+    </div>
+
+    <!-- Instrumental -->
+    <div class="subsection">
+      <div class="subsection-name">Instrumental</div>
+      <div class="notes-box">
+        <div class="notes-label">Instrumental Line</div>
+        <div class="notes-original">Original: C-C-C C-C-C C-C-C-C D-Bb-D-E</div>
+        <div class="notes-som">SOM: 5-5-5  5-5-5  5-5-5-5  6-4-6-7</div>
+      </div>
+    </div>
+
+    <!-- Bridge 1 -->
+    <div class="subsection">
+      <div class="subsection-name">Bridge 1</div>
+      <div class="chord-line">4  1  5  6m</div>
+      <div class="lyrics-line">You are good and Your mercy is forever Hallelujah</div>
+      <div class="chord-line">4  1  5  1</div>
+      <div class="lyrics-line">You are good and Your mercy is forever Hallelujah</div>
+    </div>
+
+    <!-- Chorus 4 -->
+    <div class="subsection">
+      <div class="subsection-name">Chorus 4</div>
+      <div class="chord-line">1</div>
+      <div class="lyrics-line">Jehovah turned my life around</div>
+      <div class="chord-line">5</div>
+      <div class="lyrics-line">He has turned my life around</div>
+      <div class="chord-line">1  1⁷/3  2m  4</div>
+      <div class="lyrics-line">He makes a way where there is no way</div>
+    </div>
+  </div>
+
+  <!-- Key Change -->
+  <div class="key-change">
+    <span class="badge">KEY CHANGE → F#</span>
+  </div>
+
+  <!-- Section 2: Key of F# -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Key F# Section <span class="accent">&mdash;</span> <span class="key-badge">Key: 1 = F#</span></div>
+      <div class="scale-ref">
+        <div class="label">Scale Reference</div>
+        <div class="value">1(F#)  2(G#)  3(A#)  4(B)  5(C#)  6(D#)  7(E#)</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus 3 (4x)</div>
+      <div class="chord-line">1  (cut)  1  1/3  2m  2m  1</div>
+      <div class="lyrics-line">Who has the final say, Jehovah has the final say</div>
+    </div>
+  </div>
+
+  <!-- Key Change -->
+  <div class="key-change">
+    <span class="badge">KEY CHANGE → G</span>
+  </div>
+
+  <!-- Section 3: Key of G -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Key G Section <span class="accent">&mdash;</span> <span class="key-badge">Key: 1 = G</span></div>
+      <div class="scale-ref">
+        <div class="label">Scale Reference</div>
+        <div class="value">1(G)  2(A)  3(B)  4(C)  5(D)  6(E)  7(F#)</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus 3 (4x)</div>
+      <div class="chord-line">1  (cut)  1  1/3  2m  2m  1</div>
+      <div class="lyrics-line">Who has the final say, Jehovah has the final say</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus 4</div>
+      <div class="chord-line">1</div>
+      <div class="lyrics-line">Jehovah turned my life around</div>
+      <div class="chord-line">5</div>
+      <div class="lyrics-line">He has turned my life around</div>
+      <div class="chord-line">1  1⁷/3  2m  4</div>
+      <div class="lyrics-line">He makes a way where there is no way</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Motesart Number System Converter</span>
+    <span>motesart-converter.netlify.app</span>
+  </div>
+</div>
+
+</body>
+</html>
