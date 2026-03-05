@@ -121,10 +121,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send to Gemini Vision API for full SOM conversion
-    // Use gemini-2.0-flash — fast, vision-capable, supports JSON output
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    // gemini-2.5-flash is the only model available for this API key on v1beta
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-    console.log(`[process] Sending ${(base64Data.length / 1024).toFixed(0)}KB base64 to Gemini 2.0 Flash...`);
+    console.log(`[process] Sending ${(base64Data.length / 1024).toFixed(0)}KB base64 to Gemini 2.5 Flash...`);
 
     // Use AbortController for a 55-second timeout (leaving headroom for function limit)
     const controller = new AbortController();

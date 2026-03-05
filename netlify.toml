@@ -4,6 +4,10 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["next"]
+
+[functions."___netlify-server-handler"]
+  timeout = 60
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
