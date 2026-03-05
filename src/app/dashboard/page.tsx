@@ -77,6 +77,8 @@ export default function Dashboard() {
   const [originalPreview, setOriginalPreview] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<{role: string; text: string}[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'upload' | 'manual'>('upload');
   const [manualInput, setManualInput] = useState('');
   const [selectedKey, setSelectedKey] = useState('Auto-detect');
@@ -195,17 +197,50 @@ export default function Dashboard() {
     }
   };
 
-  const handleChatSend = () => {
-    if (!chatInput.trim()) return;
-    setChatMessages(prev => [...prev, { role: 'user', text: chatInput }]);
-    // Placeholder AI response
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        role: 'ai',
-        text: 'AI analysis will be available once Gemini API is configured. For now, try using the Text Converter page for chord chart conversions.'
-      }]);
-    }, 500);
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+    const userMessage = { role: 'user', text: chatInput };
+    const updatedMessages = [...chatMessages, userMessage];
+    setChatMessages(updatedMessages);
     setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const conversionContext = activeResult ? {
+        key: activeResult.key.tonic,
+        sections: activeResult.sections,
+        progressions: activeResult.detectedProgressions,
+      } : null;
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: updatedMessages,
+          conversionContext,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setChatMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: 'ai', text: 'Sorry, I had trouble responding. Please try again.' }]);
+      }
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'ai', text: 'Connection error. Please check your internet and try again.' }]);
+    } finally {
+      setIsChatLoading(false);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  };
+
+  const handleExplainClick = () => {
+    if (!activeResult) {
+      setChatInput('What is the Motesart Number System and how does it work?');
+    } else {
+      setChatInput(`Analyze this conversion in key of ${activeResult.key.tonic}. What progressions do you see and what mood do they create?`);
+    }
   };
 
   const KEYS = ['Auto-detect','C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
@@ -495,21 +530,37 @@ export default function Dashboard() {
                   <MessageCircle className="w-5 h-5 text-[#6366f1]" />
                   <h2 className="text-sm font-semibold text-[#e2e8f0]">AI Analysis & Chat</h2>
                 </div>
-                <button className="text-xs px-3 py-1 bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 rounded transition-colors">
+                <button
+                  onClick={handleExplainClick}
+                  className="text-xs px-3 py-1 bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 rounded transition-colors"
+                >
                   Explain
                 </button>
               </div>
 
-              <div className="flex-1 mb-4 min-h-[100px] max-h-[200px] overflow-y-auto">
+              <div className="flex-1 mb-4 min-h-[100px] max-h-[300px] overflow-y-auto">
                 {chatMessages.length === 0 ? (
-                  <p className="text-sm text-[#64748b] text-center py-4">
-                    Ask questions about the sheet music, musical theory, or get AI insights about the piece.
-                  </p>
+                  <div className="text-center py-4">
+                    <p className="text-sm text-[#64748b] mb-3">
+                      Ask questions about the sheet music, musical theory, or get AI insights about the piece.
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {['What is the Motesart Number System?', 'Explain the 1-5-6-4 progression', 'How do I transpose to a new key?'].map((q, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setChatInput(q)}
+                          className="text-xs px-3 py-1.5 bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] rounded-full transition-colors"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {chatMessages.map((msg, i) => (
                       <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
+                        <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
                           msg.role === 'user'
                             ? 'bg-[#6366f1] text-white'
                             : 'bg-[#1e293b] text-[#94a3b8]'
@@ -518,6 +569,18 @@ export default function Dashboard() {
                         </div>
                       </div>
                     ))}
+                    {isChatLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-[#1e293b] px-4 py-2 rounded-lg">
+                          <div className="flex gap-1">
+                            <span className="w-2 h-2 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
                   </div>
                 )}
               </div>
@@ -533,7 +596,8 @@ export default function Dashboard() {
                 />
                 <button
                   onClick={handleChatSend}
-                  className="px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded-lg transition-colors"
+                  disabled={isChatLoading || !chatInput.trim()}
+                  className="px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] disabled:bg-[#6366f1]/30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                 >
                   <Send className="w-4 h-4" />
                 </button>
