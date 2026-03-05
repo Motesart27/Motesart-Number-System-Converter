@@ -1,34 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { convertChordChart } from '@/lib/motesart-engine';
 
-const EXTRACTION_PROMPT = `You are an expert music transcriber. Analyze this sheet music image/document and extract the chord chart in a simple text format.
+const SOM_CONVERSION_PROMPT = `You are a Motesart Number System (SOM) expert converter. Analyze this sheet music and produce a COMPLETE SOM Teaching Edition conversion.
 
-Rules:
-1. Identify the KEY of the piece (e.g., "Key: G" or "Key: C")
-2. Identify sections like [Verse], [Chorus], [Bridge], [Intro], [Outro], etc.
-3. For each section, list the chords on one line and lyrics (if visible) on the next line
-4. Use standard chord notation: C, Am, G7, Dm, F#m, Bb, etc.
-5. Separate chords with spaces
-6. If you can't read certain parts, make your best guess based on context
+## THE MOTESART NUMBER SYSTEM RULES
+- Numbers 1-7 = major scale degrees: 1(do) 2(re) 3(mi) 4(fa) 5(sol) 6(la) 7(ti)
+- Half-numbers for chromatic tones: 1½, 2½, 4½, 5½, 6½ (NEVER 3½ or 7½)
+- "1 = C" means C is the tonic: C=1, D=2, E=3, F=4, G=5, A=6, B=7
+- Minor chords: marked with "m" (e.g., 6m for Am in key of C)
+- Major on non-diatonic degree: marked with "M" (e.g., 2M for D major in key of C)
+- Diatonic major chords (1, 4, 5): NO modifier needed
+- Diminished: ° (e.g., 7° or 2°)
+- Augmented: + (e.g., 5+)
+- Extensions: superscript notation 7, 9, 11, 13
+- Slash/Inversion chords: bass/chord format. G/B in key of C = 3/5 (bass note first)
+- N.C. = No Chord (keep as "N.C.")
+- Key changes: start a new section with the new key
 
-Output format example:
-Key: G
+## OUTPUT FORMAT
+You MUST output valid JSON matching this exact structure. No markdown, no code fences, ONLY the JSON object:
 
-[Verse]
-G     D     Em    C
-Amazing grace how sweet the sound
-G     D     G
-That saved a wretch like me
+{
+  "title": "Song Title",
+  "subtitle": "SOM Teaching Edition",
+  "metadata": {
+    "keys": ["F", "G"],
+    "meter": "4/4",
+    "tempo": 120,
+    "artist": "Artist Name"
+  },
+  "sections": [
+    {
+      "name": "SECTION A",
+      "key": "F",
+      "scaleReference": "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)",
+      "subsections": [
+        {
+          "name": "Chorus 1",
+          "lines": [
+            {
+              "type": "chords",
+              "original": "F Bb C Bb",
+              "som": "1 4 5 4",
+              "lyrics": "Eh eh eh eh My God is good oh"
+            },
+            {
+              "type": "notes",
+              "label": "Instrumental Line",
+              "original": "C-C-C C-C-C C-C-C-C D-Bb-D-E",
+              "som": "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
+            },
+            {
+              "type": "nc",
+              "lyrics": "Some lyric with no chord"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 
-[Chorus]
-C     G     D     G
-I once was lost but now am found
+## LINE TYPES
+- "chords": A chord progression line. Include "original" (letter chords), "som" (number conversion with original in parens), and optionally "lyrics"
+- "notes": Individual note sequences (instrumental/melody). Include "label", "original", and "som"
+- "nc": No chord section. Just lyrics with N.C. marking
+- "break": An instrumental break or transition with optional "label"
 
-If the document contains only notes (no chords), try to identify the key and any chord patterns implied by the notes. If it's a full orchestral score, focus on the harmony/chord changes.
-
-If you cannot extract any musical content, respond with exactly: NO_MUSIC_FOUND
-
-Important: Output ONLY the chord chart text, nothing else. No explanations or commentary.`;
+## CRITICAL RULES
+1. The scaleReference line shows number-to-letter mapping: "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)"
+2. In chord/note lines ("som" field), use NUMBERS ONLY — do NOT repeat the letter names. The scale reference already tells the user what each number means. Example: "1 4 5 4" NOT "1(F) 4(Bb) 5(C) 4(Bb)"
+3. For slash chords in som lines: bass/chord — e.g., "3/1" NOT "3/1(F/A)"
+4. For quality modifiers: "6m" "2M" "7°" "5+" — numbers only, no letters
+5. Detect ALL key changes and create a new section for each key
+6. Include the full scale reference (with letters) for each key section
+7. Extract title, artist, tempo, meter if visible in the document
+8. If info is not in the document, make educated guesses based on the music
+9. Handle N.C. (No Chord) sections properly
+10. For note sequences use dashes: "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
+11. Output ONLY valid JSON. No explanations, no markdown fences.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,7 +110,13 @@ export async function POST(request: NextRequest) {
     else if (file.name.endsWith('.png')) mimeType = 'image/png';
     else if (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg')) mimeType = 'image/jpeg';
 
-    // Send to Gemini Vision API for extraction
+    // Build the prompt, optionally including a key override
+    let prompt = SOM_CONVERSION_PROMPT;
+    if (keyOverride && keyOverride !== 'Auto-detect') {
+      prompt += `\n\nIMPORTANT: The user has specified the key as ${keyOverride}. Use this as the primary key unless the music clearly modulates to other keys.`;
+    }
+
+    // Send to Gemini Vision API for full SOM conversion
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const geminiResponse = await fetch(geminiUrl, {
@@ -77,47 +132,55 @@ export async function POST(request: NextRequest) {
               }
             },
             {
-              text: EXTRACTION_PROMPT
+              text: prompt
             }
           ]
         }],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json',
         },
       }),
     });
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      console.error('Gemini extraction error:', errorText);
+      console.error('Gemini SOM conversion error:', errorText);
       return NextResponse.json(
-        { error: 'Failed to extract music from file', details: errorText },
+        { error: 'Failed to process music file', details: errorText },
         { status: 500 }
       );
     }
 
     const geminiData = await geminiResponse.json();
-    const extractedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!extractedText || extractedText.trim() === 'NO_MUSIC_FOUND') {
+    if (!rawText) {
       return NextResponse.json(
-        { error: 'Could not extract musical content from this file. Try uploading a clearer image or a different format.' },
+        { error: 'Could not extract musical content from this file.' },
         { status: 422 }
       );
     }
 
-    // Now convert the extracted chord chart using the Motesart engine
-    const options: { key?: string } = {};
-    if (keyOverride && keyOverride !== 'Auto-detect') {
-      options.key = keyOverride;
+    // Parse the JSON response from Gemini
+    let somResult;
+    try {
+      // Clean potential markdown fences
+      const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      somResult = JSON.parse(cleaned);
+    } catch {
+      console.error('Failed to parse Gemini JSON:', rawText);
+      return NextResponse.json(
+        { error: 'AI produced invalid output. Please try again.' },
+        { status: 500 }
+      );
     }
 
-    const conversionResult = convertChordChart(extractedText, options);
-
+    // Return the SOM Teaching Edition result with a format flag
     return NextResponse.json({
-      extractedText,
-      ...conversionResult,
+      format: 'som-teaching-edition',
+      ...somResult,
     });
   } catch (error) {
     console.error('Process error:', error);

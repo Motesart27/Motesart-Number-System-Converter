@@ -14,33 +14,66 @@ import {
   FileText,
   Wand2,
   Edit3,
-  ChevronDown,
+  BookOpen,
+  Info,
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 
+/* ── Old engine types (for manual text conversion) ── */
 interface MotesartChordResult {
   symbol: string;
   original: string;
   rootNumber: string;
   quality: string;
 }
-
 interface ChartLine {
   type: 'chords' | 'lyrics' | 'empty';
   motesartChords?: MotesartChordResult[];
   lyrics?: string;
 }
-
 interface ChartSection {
   name: string;
   lines: ChartLine[];
 }
-
-interface ConversionResult {
+interface OldConversionResult {
+  format?: undefined;
   key: { tonic: string; mode: string };
   sections: ChartSection[];
   detectedProgressions: { pattern: string; name: string }[];
 }
+
+/* ── NEW SOM Teaching Edition types (from Gemini) ── */
+interface SomLine {
+  type: 'chords' | 'notes' | 'nc' | 'break';
+  original?: string;
+  som?: string;
+  lyrics?: string;
+  label?: string;
+}
+interface SomSubsection {
+  name: string;
+  lines: SomLine[];
+}
+interface SomSection {
+  name: string;
+  key: string;
+  scaleReference: string;
+  subsections: SomSubsection[];
+}
+interface SomTeachingEdition {
+  format: 'som-teaching-edition';
+  title: string;
+  subtitle: string;
+  metadata: {
+    keys: string[];
+    meter: string;
+    tempo: number;
+    artist: string;
+  };
+  sections: SomSection[];
+}
+
+type ActiveResult = OldConversionResult | SomTeachingEdition;
 
 interface UploadedFile {
   name: string;
@@ -48,34 +81,269 @@ interface UploadedFile {
   type: string;
   status: 'uploaded' | 'processing' | 'converted' | 'error';
   key?: string;
-  result?: ConversionResult;
+  result?: ActiveResult;
   timestamp: Date;
   file?: File;
   errorMessage?: string;
 }
 
-function MotesartSymbol({ symbol }: { symbol: string }) {
-  const numberMatch = symbol.match(/^(\d½?)/);
-  if (!numberMatch) return <span>{symbol}</span>;
-  const num = numberMatch[1];
-  const rest = symbol.slice(num.length);
-  const isHalf = num.includes('½');
-  const baseNum = parseInt(num[0]);
-  const colors: Record<number, string> = {
-    1: '#06b6d4', 2: '#6366f1', 3: '#a855f7',
-    4: '#06b6d4', 5: '#6366f1', 6: '#a855f7', 7: '#ec4899',
-  };
-  const color = isHalf ? '#f97316' : (colors[baseNum] || '#06b6d4');
+function isSomTeachingEdition(r: ActiveResult): r is SomTeachingEdition {
+  return r && (r as SomTeachingEdition).format === 'som-teaching-edition';
+}
+
+/* ── SOM Legend Card ── */
+function SomLegendCard() {
+  const [expanded, setExpanded] = useState(false);
   return (
-    <span className="font-mono text-lg">
-      <span style={{ color, fontWeight: 700 }}>{num}</span>
-      <span className="text-[#94a3b8]">{rest}</span>
-    </span>
+    <div className="bg-[#0f172a]/50 border border-[#1e293b] rounded-xl p-5">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-[#f97316]" />
+          <h2 className="text-sm font-semibold text-[#e2e8f0]">SOM Quick Guide</h2>
+        </div>
+        <span className="text-xs text-[#64748b]">{expanded ? 'Hide' : 'Show'}</span>
+      </button>
+
+      {expanded && (
+        <div className="mt-4 space-y-3 text-xs">
+          <div>
+            <p className="text-[#94a3b8] font-semibold mb-1">Scale Degrees</p>
+            <div className="flex flex-wrap gap-2 font-mono">
+              {[
+                { n: '1', c: '#06b6d4', l: 'do' },
+                { n: '2', c: '#6366f1', l: 're' },
+                { n: '3', c: '#a855f7', l: 'mi' },
+                { n: '4', c: '#06b6d4', l: 'fa' },
+                { n: '5', c: '#6366f1', l: 'sol' },
+                { n: '6', c: '#a855f7', l: 'la' },
+                { n: '7', c: '#ec4899', l: 'ti' },
+              ].map(d => (
+                <span key={d.n} className="px-2 py-1 bg-[#1e293b] rounded">
+                  <span style={{ color: d.c, fontWeight: 700 }}>{d.n}</span>
+                  <span className="text-[#64748b] ml-1">= {d.l}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[#94a3b8] font-semibold mb-1">Chromatic Half-Numbers</p>
+            <p className="font-mono text-[#f97316]">1½ &nbsp; 2½ &nbsp; 4½ &nbsp; 5½ &nbsp; 6½</p>
+            <p className="text-[#64748b] mt-0.5">No 3½ or 7½ (E-F and B-C are natural half steps)</p>
+          </div>
+
+          <div>
+            <p className="text-[#94a3b8] font-semibold mb-1">Chord Symbols</p>
+            <div className="space-y-1 text-[#94a3b8]">
+              <p><span className="font-mono text-white">1, 4, 5</span> = diatonic major (no modifier)</p>
+              <p><span className="font-mono text-white">m</span> = minor <span className="text-[#64748b]">(e.g., 6m = Am in C)</span></p>
+              <p><span className="font-mono text-white">M</span> = non-diatonic major <span className="text-[#64748b]">(e.g., 2M = D major in C)</span></p>
+              <p><span className="font-mono text-white">°</span> = diminished &nbsp; <span className="font-mono text-white">+</span> = augmented</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[#94a3b8] font-semibold mb-1">Slash Chords</p>
+            <p className="text-[#94a3b8]"><span className="font-mono text-white">bass/chord</span> format &mdash; bass note first</p>
+            <p className="text-[#64748b]">e.g., G/B in key of C = 3/5</p>
+          </div>
+
+          <div>
+            <p className="text-[#94a3b8] font-semibold mb-1">Reading Format</p>
+            <p className="text-[#94a3b8]"><span className="font-mono text-white">1(F)</span> means scale degree 1 = the note F</p>
+            <p className="text-[#64748b]">Numbers stay the same in any key &mdash; only the notes in parentheses change!</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
+/* ── SOM Teaching Edition Renderer ── */
+function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="border-b border-[#1e293b] pb-4">
+        <h2 className="text-xl font-bold text-white mb-1">
+          {data.title} <span className="text-[#6366f1]">&mdash;</span>{' '}
+          <span className="text-[#94a3b8] font-normal text-base">{data.subtitle}</span>
+        </h2>
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mt-2">
+          {data.metadata?.keys?.length > 0 && (
+            <p className="text-[#94a3b8]">
+              <span className="font-semibold text-white">Keys:</span>{' '}
+              {data.metadata.keys.join(' → ')}
+            </p>
+          )}
+          {data.metadata?.meter && (
+            <p className="text-[#94a3b8]">
+              <span className="font-semibold text-white">Meter:</span> {data.metadata.meter}
+            </p>
+          )}
+          {data.metadata?.tempo && (
+            <p className="text-[#94a3b8]">
+              <span className="font-semibold text-white">Tempo:</span> {data.metadata.tempo}
+            </p>
+          )}
+          {data.metadata?.artist && (
+            <p className="text-[#94a3b8]">
+              <span className="font-semibold text-white">Artist:</span> {data.metadata.artist}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Sections */}
+      {data.sections?.map((section, si) => (
+        <div key={si} className="space-y-4">
+          {/* Section Header with Key */}
+          <div className="border-b border-[#334155] pb-3">
+            <h3 className="text-lg font-bold text-white">
+              {section.name} <span className="text-[#6366f1]">&mdash;</span>{' '}
+              <span className="text-[#06b6d4]">Key: 1 = {section.key}</span>
+            </h3>
+            {section.scaleReference && (
+              <div className="mt-2">
+                <span className="text-xs text-[#64748b]">Scale reference</span>
+                <p className="font-mono text-sm text-[#94a3b8] mt-0.5">{section.scaleReference}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Subsections */}
+          {section.subsections?.map((sub, subi) => (
+            <div key={subi} className="space-y-2">
+              <h4 className="text-base font-bold text-white">{sub.name}</h4>
+
+              {sub.lines?.map((line, li) => (
+                <div key={li} className="space-y-0.5">
+                  {line.type === 'chords' && (
+                    <>
+                      <p className="font-mono font-bold text-sm text-[#06b6d4] bg-[#1e293b]/40 px-3 py-1.5 rounded">
+                        {line.som || line.original}
+                      </p>
+                      {line.lyrics && (
+                        <p className="text-sm text-[#94a3b8] pl-3">{line.lyrics}</p>
+                      )}
+                    </>
+                  )}
+
+                  {line.type === 'notes' && (
+                    <div className="bg-[#1e293b]/30 px-3 py-2 rounded space-y-1">
+                      {line.label && (
+                        <p className="text-xs font-semibold text-[#a855f7]">{line.label}</p>
+                      )}
+                      {line.original && (
+                        <p className="text-xs text-[#64748b] font-mono">Original: {line.original}</p>
+                      )}
+                      <p className="font-mono font-bold text-sm text-[#f97316]">
+                        SOM: {line.som}
+                      </p>
+                    </div>
+                  )}
+
+                  {line.type === 'nc' && (
+                    <>
+                      <p className="font-mono text-xs text-[#64748b] px-3">N.C.</p>
+                      {line.lyrics && (
+                        <p className="text-sm text-[#94a3b8] pl-3">{line.lyrics}</p>
+                      )}
+                    </>
+                  )}
+
+                  {line.type === 'break' && (
+                    <div className="px-3 py-1">
+                      <p className="text-xs font-semibold text-[#a855f7] italic">
+                        {line.label || 'Instrumental Break'}
+                      </p>
+                      {line.som && (
+                        <p className="font-mono font-bold text-sm text-[#f97316] mt-0.5">{line.som}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Old-format result renderer (for manual text conversion) ── */
+function OldResultView({ result, originalPreview }: { result: OldConversionResult; originalPreview: boolean }) {
+  return (
+    <div className="space-y-4">
+      {result.sections.map((section, si) => (
+        <div key={si}>
+          <h3 className="text-xs font-bold text-[#06b6d4] mb-2 uppercase tracking-wider">
+            {section.name}
+          </h3>
+          <div className="space-y-2">
+            {section.lines.map((line, li) => {
+              if (line.type === 'empty') return <div key={li} className="h-2" />;
+              return (
+                <div key={li} className="space-y-0.5">
+                  {line.motesartChords && line.motesartChords.length > 0 && (
+                    <div className="flex flex-wrap gap-4 px-2 py-1.5 bg-[#1e293b]/30 rounded">
+                      {line.motesartChords.map((chord, ci) => {
+                        const numberMatch = chord.symbol.match(/^(\d½?)/);
+                        const num = numberMatch?.[1] || '';
+                        const rest = chord.symbol.slice(num.length);
+                        const isHalf = num.includes('½');
+                        const baseNum = parseInt(num[0]) || 1;
+                        const colors: Record<number, string> = {
+                          1: '#06b6d4', 2: '#6366f1', 3: '#a855f7',
+                          4: '#06b6d4', 5: '#6366f1', 6: '#a855f7', 7: '#ec4899',
+                        };
+                        const color = isHalf ? '#f97316' : (colors[baseNum] || '#06b6d4');
+                        return (
+                          <div key={ci} className="flex flex-col items-center">
+                            <span className="font-mono text-lg">
+                              <span style={{ color, fontWeight: 700 }}>{num}</span>
+                              <span className="text-[#94a3b8]">{rest}</span>
+                            </span>
+                            {originalPreview && (
+                              <span className="text-[10px] text-[#475569] font-mono">{chord.original}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {line.lyrics && <p className="text-sm text-[#94a3b8] pl-2">{line.lyrics}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {result.detectedProgressions?.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-[#1e293b]">
+          <h3 className="text-sm font-bold text-white mb-2">Detected Progressions</h3>
+          <div className="flex flex-wrap gap-2">
+            {result.detectedProgressions.map((prog, pi) => (
+              <span key={pi} className="text-xs px-3 py-1.5 bg-[#6366f1]/20 text-[#818cf8] rounded-full">
+                {prog.pattern} ({prog.name})
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   MAIN DASHBOARD
+   ══════════════════════════════════════════════════════ */
 export default function Dashboard() {
-  const [octaveMarkings, setOctaveMarkings] = useState(true);
   const [originalPreview, setOriginalPreview] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<{role: string; text: string}[]>([]);
@@ -85,7 +353,8 @@ export default function Dashboard() {
   const [manualInput, setManualInput] = useState('');
   const [selectedKey, setSelectedKey] = useState('Auto-detect');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [activeResult, setActiveResult] = useState<ConversionResult | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [activeResult, setActiveResult] = useState<any>(null);
   const [activeFileName, setActiveFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -95,9 +364,7 @@ export default function Dashboard() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      addFiles(Array.from(files));
-    }
+    if (files && files.length > 0) addFiles(Array.from(files));
   };
 
   const addFiles = (files: File[]) => {
@@ -110,9 +377,7 @@ export default function Dashboard() {
       file: f,
     }));
     setUploadedFiles(prev => [...newFiles, ...prev]);
-    if (newFiles.length > 0) {
-      setActiveFileName(newFiles[0].name);
-    }
+    if (newFiles.length > 0) setActiveFileName(newFiles[0].name);
   };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
@@ -128,11 +393,11 @@ export default function Dashboard() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  /* ── Convert / Process ── */
   const handleConvert = useCallback(async () => {
     setIsProcessing(true);
     try {
       if (mode === 'manual') {
-        // Manual text conversion
         if (!manualInput.trim()) { setIsProcessing(false); return; }
         const options: Record<string, string> = {};
         if (selectedKey !== 'Auto-detect') options.key = selectedKey;
@@ -158,49 +423,31 @@ export default function Dashboard() {
           }).catch(() => {});
         }
       } else {
-        // File upload processing via Gemini
         const fileToProcess = uploadedFiles.find(f => f.file && f.status === 'uploaded');
-        if (!fileToProcess || !fileToProcess.file) {
-          setIsProcessing(false);
-          return;
-        }
+        if (!fileToProcess || !fileToProcess.file) { setIsProcessing(false); return; }
 
-        // Update file status to processing
         setUploadedFiles(prev => prev.map(f =>
           f.name === fileToProcess.name ? { ...f, status: 'processing' as const } : f
         ));
 
         const formData = new FormData();
         formData.append('file', fileToProcess.file);
-        if (selectedKey !== 'Auto-detect') {
-          formData.append('key', selectedKey);
-        }
+        if (selectedKey !== 'Auto-detect') formData.append('key', selectedKey);
 
-        const res = await fetch('/api/process', {
-          method: 'POST',
-          body: formData,
-        });
+        const res = await fetch('/api/process', { method: 'POST', body: formData });
         const result = await res.json();
 
         if (res.ok) {
           setActiveResult(result);
           setActiveFileName(fileToProcess.name);
+          const keyStr = result.format === 'som-teaching-edition'
+            ? result.metadata?.keys?.[0]
+            : result.key?.tonic;
           setUploadedFiles(prev => prev.map(f =>
             f.name === fileToProcess.name
-              ? { ...f, status: 'converted' as const, key: result.key?.tonic, result }
+              ? { ...f, status: 'converted' as const, key: keyStr, result }
               : f
           ));
-          // Save to Airtable
-          fetch('/api/conversions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              inputText: result.extractedText || fileToProcess.name,
-              outputJson: result,
-              keyUsed: result.key?.tonic || 'C',
-              timeSignature: '4/4',
-            }),
-          }).catch(() => {});
         } else {
           setUploadedFiles(prev => prev.map(f =>
             f.name === fileToProcess.name
@@ -216,28 +463,43 @@ export default function Dashboard() {
     }
   }, [mode, manualInput, selectedKey, uploadedFiles]);
 
+  /* ── Export ── */
   const handleExport = (format: 'pdf' | 'csv' | 'text') => {
     if (!activeResult) return;
     let content = '';
     const fileName = `motesart-conversion.${format === 'text' ? 'txt' : format}`;
 
-    if (format === 'text' || format === 'csv') {
+    if (isSomTeachingEdition(activeResult)) {
+      const d = activeResult;
+      content += `${d.title} — ${d.subtitle}\n`;
+      content += `Keys: ${d.metadata.keys.join(' → ')}  Meter: ${d.metadata.meter}  Tempo: ${d.metadata.tempo}  Artist: ${d.metadata.artist}\n\n`;
+      d.sections.forEach(sec => {
+        content += `${sec.name} — Key: 1 = ${sec.key}\n`;
+        content += `Scale: ${sec.scaleReference}\n\n`;
+        sec.subsections.forEach(sub => {
+          content += `  ${sub.name}\n`;
+          sub.lines.forEach(line => {
+            if (line.som) content += `  ${line.som}\n`;
+            if (line.lyrics) content += `  ${line.lyrics}\n`;
+            content += '\n';
+          });
+        });
+      });
+    } else if (activeResult.key) {
       content += `Key: 1 = ${activeResult.key.tonic}\n\n`;
-      activeResult.sections.forEach(section => {
+      activeResult.sections?.forEach((section: ChartSection) => {
         content += `[${section.name}]\n`;
-        section.lines.forEach(line => {
+        section.lines.forEach((line: ChartLine) => {
           if (line.motesartChords && line.motesartChords.length > 0) {
-            if (format === 'csv') {
-              content += line.motesartChords.map(c => `${c.original},${c.symbol}`).join('\n') + '\n';
-            } else {
-              content += line.motesartChords.map(c => c.symbol).join('  ') + '\n';
-            }
+            content += line.motesartChords.map((c: MotesartChordResult) => c.symbol).join('  ') + '\n';
           }
           if (line.lyrics) content += line.lyrics + '\n';
         });
         content += '\n';
       });
+    }
 
+    if (content) {
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -246,6 +508,7 @@ export default function Dashboard() {
     }
   };
 
+  /* ── Chat ── */
   const handleChatSend = async () => {
     if (!chatInput.trim() || isChatLoading) return;
     const userMessage = { role: 'user', text: chatInput };
@@ -255,18 +518,12 @@ export default function Dashboard() {
     setIsChatLoading(true);
 
     try {
-      const conversionContext = activeResult ? {
-        key: activeResult.key.tonic,
-        sections: activeResult.sections,
-        progressions: activeResult.detectedProgressions,
-      } : null;
-
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: updatedMessages,
-          conversionContext,
+          conversionContext: activeResult || null,
         }),
       });
 
@@ -288,11 +545,18 @@ export default function Dashboard() {
     if (!activeResult) {
       setChatInput('What is the Motesart Number System and how does it work?');
     } else {
-      setChatInput(`Analyze this conversion in key of ${activeResult.key.tonic}. What progressions do you see and what mood do they create?`);
+      setChatInput('Analyze this conversion. What key changes, progressions, and patterns do you see?');
     }
   };
 
   const KEYS = ['Auto-detect','C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
+
+  /* ── Determine key display ── */
+  const keyDisplay = activeResult
+    ? isSomTeachingEdition(activeResult)
+      ? activeResult.metadata?.keys?.join(' → ')
+      : activeResult.key?.tonic
+    : null;
 
   return (
     <div className="min-h-screen bg-[#020617]">
@@ -350,9 +614,7 @@ export default function Dashboard() {
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-[#64748b] mb-3">
-                    Paste a chord chart below to convert
-                  </p>
+                  <p className="text-xs text-[#64748b] mb-3">Paste a chord chart below to convert</p>
                   <div className="mb-3">
                     <label className="text-xs text-[#64748b] mb-1 block">Key</label>
                     <select
@@ -385,28 +647,18 @@ export default function Dashboard() {
             <div className="bg-[#0f172a]/50 border border-[#1e293b] rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-[#e2e8f0]">Recent Files</h2>
-                <button
-                  onClick={() => setUploadedFiles([])}
-                  className="p-1 hover:bg-[#1e293b] rounded transition-colors"
-                >
+                <button onClick={() => setUploadedFiles([])} className="p-1 hover:bg-[#1e293b] rounded transition-colors">
                   <RefreshCw className="w-4 h-4 text-[#64748b] hover:text-[#94a3b8]" />
                 </button>
               </div>
-
               <div className="space-y-2">
                 {uploadedFiles.length === 0 ? (
                   <p className="text-xs text-[#64748b] text-center py-4">No files uploaded yet</p>
                 ) : (
                   uploadedFiles.map((file, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 bg-[#0f172a] rounded-lg hover:bg-[#1e293b] transition-colors cursor-pointer">
-                      <div className={`p-2 rounded ${
-                        file.type.includes('pdf') ? 'bg-red-500/20' :
-                        file.type.includes('image') ? 'bg-blue-500/20' : 'bg-green-500/20'
-                      }`}>
-                        <File className={`w-4 h-4 ${
-                          file.type.includes('pdf') ? 'text-red-400' :
-                          file.type.includes('image') ? 'text-blue-400' : 'text-green-400'
-                        }`} />
+                      <div className={`p-2 rounded ${file.type.includes('pdf') ? 'bg-red-500/20' : file.type.includes('image') ? 'bg-blue-500/20' : 'bg-green-500/20'}`}>
+                        <File className={`w-4 h-4 ${file.type.includes('pdf') ? 'text-red-400' : file.type.includes('image') ? 'text-blue-400' : 'text-green-400'}`} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[#e2e8f0] truncate">{file.name}</p>
@@ -420,10 +672,7 @@ export default function Dashboard() {
                       }`}>
                         {file.status.charAt(0).toUpperCase() + file.status.slice(1)}
                       </span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                        className="p-1 hover:bg-[#0f172a] rounded transition-colors"
-                      >
+                      <button onClick={(e) => { e.stopPropagation(); removeFile(i); }} className="p-1 hover:bg-[#0f172a] rounded transition-colors">
                         <Trash2 className="w-4 h-4 text-[#64748b] hover:text-red-400" />
                       </button>
                     </div>
@@ -432,24 +681,15 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* SOM Quick Guide */}
+            <SomLegendCard />
+
             {/* Display Settings Panel */}
             <div className="bg-[#0f172a]/50 border border-[#1e293b] rounded-xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Settings className="w-5 h-5 text-[#6366f1]" />
                 <h2 className="text-sm font-semibold text-[#e2e8f0]">Display Settings</h2>
               </div>
-
-              <div className="mb-4 flex items-center justify-between">
-                <label className="text-sm text-[#94a3b8]">Show octave markings</label>
-                <button
-                  onClick={() => setOctaveMarkings(!octaveMarkings)}
-                  className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-                  style={{ backgroundColor: octaveMarkings ? '#6366f1' : '#334155' }}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${octaveMarkings ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-
               <div className="mb-4 flex items-center justify-between">
                 <label className="text-sm text-[#94a3b8]">Show original preview</label>
                 <button
@@ -460,7 +700,6 @@ export default function Dashboard() {
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${originalPreview ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
               </div>
-
               <div className="pt-3 border-t border-[#1e293b]">
                 <p className="text-xs text-[#64748b] mb-2">Chromatic reference</p>
                 <p className="text-xs font-mono text-[#f97316]">1½ 2½ 4½ 5½ 6½</p>
@@ -476,12 +715,12 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#1e293b]">
                 <div className="flex items-center gap-2">
                   <Music className="w-5 h-5 text-[#6366f1]" />
-                  <h2 className="text-sm font-semibold text-[#e2e8f0]">Motesart Conversion Preview</h2>
+                  <h2 className="text-sm font-semibold text-[#e2e8f0]">SOM Teaching Edition</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  {activeResult && (
+                  {keyDisplay && (
                     <span className="text-xs px-2 py-1 bg-[#6366f1]/20 text-[#818cf8] rounded font-mono font-bold">
-                      1 = {activeResult.key.tonic}
+                      1 = {keyDisplay}
                     </span>
                   )}
                   <span className={`text-xs px-2 py-1 rounded ${
@@ -499,49 +738,10 @@ export default function Dashboard() {
                   {activeFileName && (
                     <p className="text-xs text-[#64748b] mb-3">Source: {activeFileName}</p>
                   )}
-                  <div className="space-y-4">
-                    {activeResult.sections.map((section, si) => (
-                      <div key={si}>
-                        <h3 className="text-xs font-bold text-[#06b6d4] mb-2 uppercase tracking-wider">
-                          {section.name}
-                        </h3>
-                        <div className="space-y-2">
-                          {section.lines.map((line, li) => {
-                            if (line.type === 'empty') return <div key={li} className="h-2" />;
-                            return (
-                              <div key={li} className="space-y-0.5">
-                                {line.motesartChords && line.motesartChords.length > 0 && (
-                                  <div className="flex flex-wrap gap-4 px-2 py-1.5 bg-[#1e293b]/30 rounded">
-                                    {line.motesartChords.map((chord, ci) => (
-                                      <div key={ci} className="flex flex-col items-center">
-                                        <MotesartSymbol symbol={chord.symbol} />
-                                        {originalPreview && (
-                                          <span className="text-[10px] text-[#475569] font-mono">{chord.original}</span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {line.lyrics && <p className="text-sm text-[#94a3b8] pl-2">{line.lyrics}</p>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {activeResult.detectedProgressions.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-[#1e293b]">
-                      <h3 className="text-sm font-bold text-white mb-2">Detected Progressions</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {activeResult.detectedProgressions.map((prog, pi) => (
-                          <span key={pi} className="text-xs px-3 py-1.5 bg-[#6366f1]/20 text-[#818cf8] rounded-full">
-                            {prog.pattern} ({prog.name})
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  {isSomTeachingEdition(activeResult) ? (
+                    <SomTeachingEditionView data={activeResult} />
+                  ) : (
+                    <OldResultView result={activeResult as OldConversionResult} originalPreview={originalPreview} />
                   )}
                 </div>
               ) : (
@@ -553,7 +753,6 @@ export default function Dashboard() {
                       ? 'Upload sheet music and click Process to extract and convert using Gemini AI.'
                       : 'Switch to Manual Entry mode and paste a chord chart to convert.'}
                   </p>
-
                   {mode === 'upload' && (
                     <div className="flex flex-col items-center gap-2">
                       <button
@@ -564,7 +763,7 @@ export default function Dashboard() {
                         {isProcessing ? 'Processing...' : 'Process with Gemini AI'}
                       </button>
                       <p className="text-xs text-[#64748b]">
-                        Extracts notes, lyrics, key signature from scanned sheet music
+                        Extracts notes, lyrics, key signature and converts to SOM
                       </p>
                     </div>
                   )}
@@ -579,27 +778,19 @@ export default function Dashboard() {
                   <MessageCircle className="w-5 h-5 text-[#6366f1]" />
                   <h2 className="text-sm font-semibold text-[#e2e8f0]">AI Analysis & Chat</h2>
                 </div>
-                <button
-                  onClick={handleExplainClick}
-                  className="text-xs px-3 py-1 bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 rounded transition-colors"
-                >
+                <button onClick={handleExplainClick} className="text-xs px-3 py-1 bg-[#7c3aed]/20 text-[#a78bfa] hover:bg-[#7c3aed]/30 rounded transition-colors">
                   Explain
                 </button>
               </div>
-
               <div className="flex-1 mb-4 min-h-[100px] max-h-[300px] overflow-y-auto">
                 {chatMessages.length === 0 ? (
                   <div className="text-center py-4">
                     <p className="text-sm text-[#64748b] mb-3">
-                      Ask questions about the sheet music, musical theory, or get AI insights about the piece.
+                      Ask questions about the sheet music, musical theory, or get AI insights.
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {['What is the Motesart Number System?', 'Explain the 1-5-6-4 progression', 'How do I transpose to a new key?'].map((q, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setChatInput(q)}
-                          className="text-xs px-3 py-1.5 bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] rounded-full transition-colors"
-                        >
+                        <button key={i} onClick={() => setChatInput(q)} className="text-xs px-3 py-1.5 bg-[#1e293b] hover:bg-[#334155] text-[#94a3b8] rounded-full transition-colors">
                           {q}
                         </button>
                       ))}
@@ -610,9 +801,7 @@ export default function Dashboard() {
                     {chatMessages.map((msg, i) => (
                       <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
-                          msg.role === 'user'
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-[#1e293b] text-[#94a3b8]'
+                          msg.role === 'user' ? 'bg-[#6366f1] text-white' : 'bg-[#1e293b] text-[#94a3b8]'
                         }`}>
                           {msg.text}
                         </div>
@@ -633,7 +822,6 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -659,32 +847,18 @@ export default function Dashboard() {
                 <Download className="w-5 h-5 text-[#6366f1]" />
                 <h2 className="text-sm font-semibold text-[#e2e8f0]">Export & Share</h2>
               </div>
-
               <div className="grid grid-cols-3 gap-3">
-                <button
-                  onClick={() => handleExport('pdf')}
-                  disabled={!activeResult}
-                  className="py-2 px-4 bg-[#1e293b] hover:bg-[#334155] disabled:opacity-30 disabled:cursor-not-allowed text-[#94a3b8] hover:text-[#e2e8f0] text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  PDF
-                </button>
-                <button
-                  onClick={() => handleExport('csv')}
-                  disabled={!activeResult}
-                  className="py-2 px-4 bg-[#1e293b] hover:bg-[#334155] disabled:opacity-30 disabled:cursor-not-allowed text-[#94a3b8] hover:text-[#e2e8f0] text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  CSV
-                </button>
-                <button
-                  onClick={() => handleExport('text')}
-                  disabled={!activeResult}
-                  className="py-2 px-4 bg-[#1e293b] hover:bg-[#334155] disabled:opacity-30 disabled:cursor-not-allowed text-[#94a3b8] hover:text-[#e2e8f0] text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Text
-                </button>
+                {(['pdf', 'csv', 'text'] as const).map(fmt => (
+                  <button
+                    key={fmt}
+                    onClick={() => handleExport(fmt)}
+                    disabled={!activeResult}
+                    className="py-2 px-4 bg-[#1e293b] hover:bg-[#334155] disabled:opacity-30 disabled:cursor-not-allowed text-[#94a3b8] hover:text-[#e2e8f0] text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
