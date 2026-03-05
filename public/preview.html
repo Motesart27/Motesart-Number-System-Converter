@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOM Teaching Edition Preview — African Medley</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #020617; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; min-height: 100vh; }
+
+  .container { max-width: 800px; margin: 0 auto; }
+
+  /* Header */
+  .header { text-align: center; padding: 24px; margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1));
+    border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; }
+  .header h1 { font-size: 28px; color: #a5b4fc; margin-bottom: 4px; }
+  .header h2 { font-size: 16px; color: #94a3b8; font-weight: 400; margin-bottom: 16px; }
+  .meta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .meta-item { background: rgba(99,102,241,0.15); padding: 6px 14px; border-radius: 20px; font-size: 13px; color: #c7d2fe; }
+  .meta-item strong { color: #818cf8; }
+
+  /* Legend Card */
+  .legend { background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .legend-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; color: #c7d2fe; margin-bottom: 16px; }
+  .legend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .legend-num { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-weight: 700; font-size: 14px; }
+  .n1 { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .n2 { background: rgba(249,115,22,0.2); color: #fdba74; }
+  .n3 { background: rgba(234,179,8,0.2); color: #fde047; }
+  .n4 { background: rgba(34,197,94,0.2); color: #86efac; }
+  .n5 { background: rgba(6,182,212,0.2); color: #67e8f9; }
+  .n6 { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+  .n7 { background: rgba(168,85,247,0.2); color: #c4b5fd; }
+  .legend-symbols { margin-top: 14px; padding-top: 14px; border-top: 1px solid #1e293b; }
+  .legend-symbols h4 { font-size: 14px; color: #94a3b8; margin-bottom: 8px; }
+  .symbol-row { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #cbd5e1; }
+  .symbol-row code { background: rgba(6,182,212,0.15); color: #67e8f9; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  /* Section */
+  .section { background: rgba(15,23,42,0.6); border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+  .section-header { padding: 14px 20px; background: linear-gradient(90deg, rgba(99,102,241,0.2), transparent);
+    border-bottom: 1px solid rgba(99,102,241,0.2); }
+  .section-name { font-size: 18px; font-weight: 700; color: #a5b4fc; }
+  .section-key { font-size: 14px; color: #94a3b8; margin-top: 4px; }
+  .section-key strong { color: #c7d2fe; }
+  .scale-ref { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #67e8f9;
+    background: rgba(6,182,212,0.1); padding: 8px 20px; border-bottom: 1px solid #1e293b; }
+
+  /* Subsection */
+  .subsection { padding: 12px 20px; }
+  .subsection + .subsection { border-top: 1px solid rgba(30,41,59,0.5); }
+  .subsection-name { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Chord Line */
+  .chord-line { margin-bottom: 12px; }
+  .chord-som { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700;
+    color: #22d3ee; letter-spacing: 2px; margin-bottom: 2px; }
+  .chord-lyrics { font-size: 14px; color: #94a3b8; font-style: italic; }
+  .chord-original { font-size: 11px; color: #475569; margin-top: 1px; }
+
+  /* Key Change Banner */
+  .key-change { display: flex; align-items: center; gap: 8px; padding: 8px 20px;
+    background: linear-gradient(90deg, rgba(168,85,247,0.15), transparent);
+    border-top: 1px solid rgba(168,85,247,0.3); font-size: 13px; color: #c4b5fd; }
+  .key-change::before { content: '🔑'; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-purple { background: rgba(168,85,247,0.2); color: #c4b5fd; }
+  .badge-cyan { background: rgba(6,182,212,0.2); color: #67e8f9; }
+
+  .show-original .chord-original { display: block; }
+  .hide-original .chord-original { display: none; }
+
+  .toggle-bar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .toggle-btn { background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3);
+    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .toggle-btn:hover { background: rgba(99,102,241,0.3); }
+
+  .note { text-align: center; color: #475569; font-size: 12px; margin-top: 20px; padding: 12px;
+    border-top: 1px solid #1e293b; }
+</style>
+</head>
+<body>
+<div class="container hide-original" id="app">
+
+  <!-- Toggle -->
+  <div class="toggle-bar">
+    <button class="toggle-btn" onclick="document.getElementById('app').classList.toggle('show-original'); document.getElementById('app').classList.toggle('hide-original'); this.textContent = this.textContent.includes('Show') ? 'Hide Original Chords' : 'Show Original Chords';">
+      Show Original Chords
+    </button>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>African Medley</h1>
+    <h2>SOM Teaching Edition</h2>
+    <div class="meta">
+      <div class="meta-item"><strong>Keys:</strong>&nbsp; F → F# → G</div>
+      <div class="meta-item"><strong>Meter:</strong>&nbsp; 4/4</div>
+      <div class="meta-item"><strong>Tempo:</strong>&nbsp; 125 BPM</div>
+      <div class="meta-item"><strong>Artist:</strong>&nbsp; Tye Tribbett</div>
+    </div>
+  </div>
+
+  <!-- SOM Quick Guide -->
+  <div class="legend">
+    <div class="legend-title">📖 SOM Quick Guide</div>
+    <div class="legend-grid">
+      <div class="legend-item"><span class="legend-num n1">1</span> Root / Tonic (Do)</div>
+      <div class="legend-item"><span class="legend-num n2">2</span> Major 2nd (Re)</div>
+      <div class="legend-item"><span class="legend-num n3">3</span> Major 3rd (Mi)</div>
+      <div class="legend-item"><span class="legend-num n4">4</span> Perfect 4th (Fa)</div>
+      <div class="legend-item"><span class="legend-num n5">5</span> Perfect 5th (Sol)</div>
+      <div class="legend-item"><span class="legend-num n6">6</span> Major 6th (La)</div>
+      <div class="legend-item"><span class="legend-num n7">7</span> Major 7th (Ti)</div>
+    </div>
+    <div class="legend-symbols">
+      <h4>Symbols &amp; Modifiers</h4>
+      <div class="symbol-row">
+        <span><code>½</code> = chromatic (1½ 2½ 4½ 5½ 6½)</span>
+        <span><code>m</code> = minor</span>
+        <span><code>M</code> = major 7th</span>
+        <span><code>°</code> = diminished</span>
+        <span><code>+</code> = augmented</span>
+        <span><code>3/1</code> = slash chord (bass/chord)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION A — Key of F -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-name">SECTION A <span class="badge badge-purple">Key: 1 = F</span></div>
+    </div>
+    <div class="scale-ref">Scale: 1(F)  2(G)  3(A)  4(Bb)  5(C)  6(D)  7(E)</div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus 1</div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 4</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good oh</div>
+        <div class="chord-original">F  Bb  C  Bb</div>
+      </div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 1</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good</div>
+        <div class="chord-original">F  Bb  C  F</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-name">Verse</div>
+      <div class="chord-line">
+        <div class="chord-som">6m &nbsp; 4 &nbsp; 1 &nbsp; 5</div>
+        <div class="chord-lyrics">Who has the final say</div>
+        <div class="chord-original">Dm  Bb  F  C</div>
+      </div>
+      <div class="chord-line">
+        <div class="chord-som">6m &nbsp; 4 &nbsp; 1 &nbsp; 5</div>
+        <div class="chord-lyrics">Jehovah has the final say</div>
+        <div class="chord-original">Dm  Bb  F  C</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus 2</div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 4</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good oh</div>
+        <div class="chord-original">F  Bb  C  Bb</div>
+      </div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 1</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good</div>
+        <div class="chord-original">F  Bb  C  F</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION B — Key Change to F# -->
+  <div class="section">
+    <div class="key-change">Key Change: F → F#</div>
+    <div class="section-header">
+      <div class="section-name">SECTION B <span class="badge badge-purple">Key: 1 = F#</span></div>
+    </div>
+    <div class="scale-ref">Scale: 1(F#)  2(G#)  3(A#)  4(B)  5(C#)  6(D#)  7(E#)</div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus (Key Change)</div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 4</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good oh</div>
+        <div class="chord-original">F#  B  C#  B</div>
+      </div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 1</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good</div>
+        <div class="chord-original">F#  B  C#  F#</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION C — Key Change to G -->
+  <div class="section">
+    <div class="key-change">Key Change: F# → G</div>
+    <div class="section-header">
+      <div class="section-name">SECTION C <span class="badge badge-purple">Key: 1 = G</span></div>
+    </div>
+    <div class="scale-ref">Scale: 1(G)  2(A)  3(B)  4(C)  5(D)  6(E)  7(F#)</div>
+
+    <div class="subsection">
+      <div class="subsection-name">Chorus (Final Key)</div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 4</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good oh</div>
+        <div class="chord-original">G  C  D  C</div>
+      </div>
+      <div class="chord-line">
+        <div class="chord-som">1 &nbsp; 4 &nbsp; 5 &nbsp; 1</div>
+        <div class="chord-lyrics">Eh eh eh eh My God is good</div>
+        <div class="chord-original">G  C  D  G</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    This is a preview of the SOM Teaching Edition format. Upload your actual African Medley PDF on the dashboard to get the full Gemini-powered conversion.
+  </div>
+</div>
+</body>
+</html>
