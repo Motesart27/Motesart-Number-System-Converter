@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 const SYSTEM_PROMPT = `You are the Motesart AI Music Assistant, an expert in the Motesart Number System and music theory.
 
 ## About the Motesart Number System
@@ -29,12 +26,15 @@ interface ChatMessage {
 
 export async function POST(request: NextRequest) {
   try {
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
       return NextResponse.json(
         { error: 'Gemini API key not configured' },
         { status: 500 }
       );
     }
+
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const { messages, conversionContext } = await request.json();
 
