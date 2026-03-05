@@ -434,24 +434,39 @@ export default function Dashboard() {
         formData.append('file', fileToProcess.file);
         if (selectedKey !== 'Auto-detect') formData.append('key', selectedKey);
 
-        const res = await fetch('/api/process', { method: 'POST', body: formData });
-        const result = await res.json();
+        // Use AbortController for 65-second client-side timeout
+        const controller = new AbortController();
+        const clientTimeout = setTimeout(() => controller.abort(), 65000);
 
-        if (res.ok) {
-          setActiveResult(result);
-          setActiveFileName(fileToProcess.name);
-          const keyStr = result.format === 'som-teaching-edition'
-            ? result.metadata?.keys?.[0]
-            : result.key?.tonic;
+        try {
+          const res = await fetch('/api/process', { method: 'POST', body: formData, signal: controller.signal });
+          clearTimeout(clientTimeout);
+          const result = await res.json();
+
+          if (res.ok) {
+            setActiveResult(result);
+            setActiveFileName(fileToProcess.name);
+            const keyStr = result.format === 'som-teaching-edition'
+              ? result.metadata?.keys?.[0]
+              : result.key?.tonic;
+            setUploadedFiles(prev => prev.map(f =>
+              f.name === fileToProcess.name
+                ? { ...f, status: 'converted' as const, key: keyStr, result }
+                : f
+            ));
+          } else {
+            setUploadedFiles(prev => prev.map(f =>
+              f.name === fileToProcess.name
+                ? { ...f, status: 'error' as const, errorMessage: result.error || 'Processing failed' }
+                : f
+            ));
+          }
+        } catch (fetchErr) {
+          clearTimeout(clientTimeout);
+          const isTimeout = fetchErr instanceof Error && fetchErr.name === 'AbortError';
           setUploadedFiles(prev => prev.map(f =>
             f.name === fileToProcess.name
-              ? { ...f, status: 'converted' as const, key: keyStr, result }
-              : f
-          ));
-        } else {
-          setUploadedFiles(prev => prev.map(f =>
-            f.name === fileToProcess.name
-              ? { ...f, status: 'error' as const, errorMessage: result.error }
+              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out — try again or use a smaller file' : 'Network error — check your connection' }
               : f
           ));
         }
