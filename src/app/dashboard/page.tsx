@@ -222,14 +222,16 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               {sub.lines?.map((line, li) => (
                 <div key={li} className="space-y-0.5">
                   {line.type === 'chords' && (
-                    <>
-                      <p className="font-mono font-bold text-sm text-[#06b6d4] bg-[#1e293b]/40 px-3 py-1.5 rounded">
+                    <div className="bg-[#1e293b]/30 px-3 py-2 rounded">
+                      <pre className="font-mono font-bold text-sm text-[#06b6d4] whitespace-pre leading-snug m-0">
                         {line.som || line.original}
-                      </p>
+                      </pre>
                       {line.lyrics && (
-                        <p className="text-sm text-[#94a3b8] pl-3">{line.lyrics}</p>
+                        <pre className="font-mono text-sm text-[#94a3b8] whitespace-pre leading-snug m-0">
+                          {line.lyrics}
+                        </pre>
                       )}
-                    </>
+                    </div>
                   )}
 
                   {line.type === 'notes' && (
@@ -544,10 +546,12 @@ export default function Dashboard() {
 
         sub.lines.forEach(line => {
           if (line.type === 'chords') {
-            sectionsHtml += `<div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#0891b2;background:#f0fdfa;border-left:3px solid #06b6d4;padding:5px 14px;border-radius:0 4px 4px 0;margin-bottom:2px;letter-spacing:1px">${line.som || line.original || ''}</div>`;
+            sectionsHtml += `<div style="background:#f0fdfa;border-left:3px solid #06b6d4;padding:6px 14px;border-radius:0 4px 4px 0;margin-bottom:6px">`;
+            sectionsHtml += `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#0891b2;white-space:pre;margin:0;line-height:1.4">${line.som || line.original || ''}</pre>`;
             if (line.lyrics) {
-              sectionsHtml += `<div style="font-size:12px;color:#475569;padding-left:17px;margin-bottom:8px;line-height:1.5">${line.lyrics}</div>`;
+              sectionsHtml += `<pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#475569;white-space:pre;margin:0;line-height:1.4">${line.lyrics}</pre>`;
             }
+            sectionsHtml += `</div>`;
           } else if (line.type === 'notes') {
             sectionsHtml += `<div style="background:#faf5ff;border-left:3px solid #a855f7;padding:8px 14px;border-radius:0 4px 4px 0;margin-bottom:8px">`;
             if (line.label) sectionsHtml += `<div style="font-size:10px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px">${line.label}</div>`;

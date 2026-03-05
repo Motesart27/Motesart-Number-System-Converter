@@ -65,10 +65,23 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
 }
 
 ## LINE TYPES
-- "chords": A chord progression line. Include "original" (letter chords), "som" (number conversion with original in parens), and optionally "lyrics"
+- "chords": A chord progression line. Include "original" (letter chords), "som" (number conversion), and optionally "lyrics"
 - "notes": Individual note sequences (instrumental/melody). Include "label", "original", and "som"
 - "nc": No chord section. Just lyrics with N.C. marking
 - "break": An instrumental break or transition with optional "label"
+
+## CHORD-LYRIC ALIGNMENT (CRITICAL)
+When a "chords" line has "lyrics", you MUST space-align the "som" field so each chord number sits directly above the word/syllable where that chord is played. Use spaces to pad the chord numbers to match the character position of the corresponding word in the lyrics.
+
+Example — if lyrics are "I love to tell how Jesus saved my soul" and chords change on "I", "tell", "Jesus", "soul":
+  "som":    "1              4       5            1"
+  "lyrics": "I love to tell how Je-sus saved my soul"
+
+The chord number must START at the same character index as the word it belongs to. Pad with spaces so they visually align when displayed in a monospace font. This is the traditional chord chart format.
+
+Another example — if lyrics are "Amazing grace how sweet the sound" with chords on "Amazing" and "sweet":
+  "som":    "1              4"
+  "lyrics": "Amazing grace how sweet the sound"
 
 ## CRITICAL RULES
 1. The scaleReference line shows number-to-letter mapping: "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)"
@@ -81,7 +94,8 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
 8. If info is not in the document, make educated guesses based on the music
 9. Handle N.C. (No Chord) sections properly
 10. For note sequences use dashes: "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
-11. Output ONLY valid JSON. No explanations, no markdown fences.`;
+11. Output ONLY valid JSON. No explanations, no markdown fences.
+12. ALWAYS space-align "som" with "lyrics" for chord lines as described above.`;
 
 export async function POST(request: NextRequest) {
   try {
