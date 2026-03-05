@@ -10,7 +10,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: #111827;
+    background: #e5e7eb;
     display: flex;
     justify-content: center;
     padding: 40px 20px;
@@ -20,11 +20,11 @@
   .page {
     width: 8.5in;
     min-height: 11in;
-    background: #020617;
-    color: #e2e8f0;
-    padding: 48px 56px;
+    background: #ffffff;
+    color: #1e293b;
+    padding: 48px 56px 72px;
     border-radius: 4px;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     position: relative;
     overflow: hidden;
   }
@@ -38,48 +38,71 @@
     background: linear-gradient(90deg, #6366f1, #06b6d4, #f97316);
   }
 
+  /* Logo bar */
+  .logo-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .logo-bar img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .logo-bar .brand {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .logo-bar .brand-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
   /* Header */
   .header {
-    border-bottom: 1px solid #1e293b;
-    padding-bottom: 20px;
-    margin-bottom: 28px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 18px;
+    margin-bottom: 24px;
   }
 
   .title {
     font-size: 26px;
     font-weight: 700;
-    color: #f8fafc;
+    color: #0f172a;
     margin-bottom: 2px;
   }
 
   .title .accent { color: #6366f1; }
 
-  .subtitle {
-    font-size: 14px;
-    color: #94a3b8;
-    font-weight: 400;
-    margin-bottom: 12px;
-  }
-
   .meta-row {
     display: flex;
     gap: 28px;
     font-size: 12px;
-    color: #94a3b8;
+    color: #64748b;
+    margin-top: 8px;
   }
 
   .meta-row .label {
     font-weight: 700;
-    color: #e2e8f0;
+    color: #334155;
   }
 
   /* Section */
   .section {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
 
   .section-header {
-    border-bottom: 1px solid #334155;
+    border-bottom: 2px solid #e2e8f0;
     padding-bottom: 10px;
     margin-bottom: 14px;
   }
@@ -87,11 +110,11 @@
   .section-title {
     font-size: 16px;
     font-weight: 700;
-    color: #f8fafc;
+    color: #0f172a;
   }
 
   .section-title .key-badge {
-    color: #06b6d4;
+    color: #0891b2;
   }
 
   .scale-ref {
@@ -100,7 +123,7 @@
 
   .scale-ref .label {
     font-size: 10px;
-    color: #64748b;
+    color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -108,20 +131,20 @@
   .scale-ref .value {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    color: #94a3b8;
+    color: #475569;
     margin-top: 2px;
   }
 
   /* Subsection */
   .subsection {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .subsection-name {
     font-size: 13px;
     font-weight: 700;
-    color: #e2e8f0;
-    margin-bottom: 6px;
+    color: #1e293b;
+    margin-bottom: 5px;
   }
 
   /* Lines */
@@ -129,18 +152,19 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 14px;
     font-weight: 700;
-    color: #06b6d4;
-    background: rgba(30, 41, 59, 0.4);
-    padding: 6px 14px;
-    border-radius: 4px;
+    color: #0891b2;
+    background: #f0fdfa;
+    border-left: 3px solid #06b6d4;
+    padding: 5px 14px;
+    border-radius: 0 4px 4px 0;
     margin-bottom: 2px;
     letter-spacing: 1px;
   }
 
   .lyrics-line {
     font-size: 12px;
-    color: #94a3b8;
-    padding-left: 14px;
+    color: #475569;
+    padding-left: 17px;
     margin-bottom: 8px;
     line-height: 1.5;
   }
@@ -148,29 +172,30 @@
   .nc-line {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    color: #64748b;
-    padding-left: 14px;
+    color: #94a3b8;
+    padding-left: 17px;
     margin-bottom: 1px;
   }
 
   .nc-lyrics {
     font-size: 12px;
-    color: #94a3b8;
-    padding-left: 14px;
+    color: #475569;
+    padding-left: 17px;
     margin-bottom: 6px;
   }
 
   .notes-box {
-    background: rgba(30, 41, 59, 0.3);
+    background: #faf5ff;
+    border-left: 3px solid #a855f7;
     padding: 8px 14px;
-    border-radius: 4px;
+    border-radius: 0 4px 4px 0;
     margin-bottom: 8px;
   }
 
   .notes-label {
     font-size: 10px;
     font-weight: 600;
-    color: #a855f7;
+    color: #7c3aed;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -178,7 +203,7 @@
   .notes-original {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    color: #64748b;
+    color: #94a3b8;
     margin-top: 2px;
   }
 
@@ -186,22 +211,36 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
     font-weight: 700;
-    color: #f97316;
+    color: #ea580c;
     margin-top: 3px;
   }
 
   /* Footer */
   .footer {
     position: absolute;
-    bottom: 30px;
+    bottom: 24px;
     left: 56px;
     right: 56px;
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
-    color: #475569;
-    border-top: 1px solid #1e293b;
-    padding-top: 12px;
+    align-items: center;
+    font-size: 9px;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 10px;
+  }
+
+  .footer .powered {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .footer .powered img {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    object-fit: cover;
   }
 
   /* Key change divider */
@@ -209,7 +248,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 24px 0 16px;
+    margin: 20px 0 14px;
   }
 
   .key-change::before,
@@ -217,17 +256,17 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+    background: linear-gradient(90deg, transparent, #c7d2fe, transparent);
   }
 
   .key-change .badge {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    color: #818cf8;
-    background: #6366f1/15;
+    color: #6366f1;
+    background: #eef2ff;
     padding: 3px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    border: 1px solid #c7d2fe;
     white-space: nowrap;
   }
 </style>
@@ -235,11 +274,20 @@
 <body>
 
 <div class="page">
+  <!-- Logo Bar -->
+  <div class="logo-bar">
+    <img src="https://customer-assets.emergentagent.com/job_music-to-numbers/artifacts/eqmmw6fl_2316F097-7806-4D1F-AB36-BB5FF560800D.png" alt="Motesart">
+    <div>
+      <div class="brand">Motesart Converter</div>
+      <div class="brand-sub">SOM Teaching Edition</div>
+    </div>
+  </div>
+
   <!-- Header -->
   <div class="header">
     <div class="title">African Medley <span class="accent">&mdash;</span> <span style="font-weight:400;font-size:16px;color:#94a3b8">SOM Teaching Edition</span></div>
     <div class="meta-row">
-      <span><span class="label">Keys:</span> F → F# → G</span>
+      <span><span class="label">Keys:</span> F &rarr; F# &rarr; G</span>
       <span><span class="label">Meter:</span> 4/4</span>
       <span><span class="label">Tempo:</span> 125</span>
       <span><span class="label">Artist:</span> Tye Tribbet</span>
@@ -300,14 +348,14 @@
       <div class="lyrics-line">Jehovah turned my life around</div>
       <div class="chord-line">5</div>
       <div class="lyrics-line">He has turned my life around</div>
-      <div class="chord-line">1  1⁷/3  2m  4</div>
+      <div class="chord-line">1  1&#x2077;/3  2m  4</div>
       <div class="lyrics-line">He makes a way where there is no way</div>
     </div>
   </div>
 
   <!-- Key Change -->
   <div class="key-change">
-    <span class="badge">KEY CHANGE → F#</span>
+    <span class="badge">KEY CHANGE &rarr; F#</span>
   </div>
 
   <!-- Section 2: Key of F# -->
@@ -329,7 +377,7 @@
 
   <!-- Key Change -->
   <div class="key-change">
-    <span class="badge">KEY CHANGE → G</span>
+    <span class="badge">KEY CHANGE &rarr; G</span>
   </div>
 
   <!-- Section 3: Key of G -->
@@ -354,14 +402,17 @@
       <div class="lyrics-line">Jehovah turned my life around</div>
       <div class="chord-line">5</div>
       <div class="lyrics-line">He has turned my life around</div>
-      <div class="chord-line">1  1⁷/3  2m  4</div>
+      <div class="chord-line">1  1&#x2077;/3  2m  4</div>
       <div class="lyrics-line">He makes a way where there is no way</div>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
-    <span>Motesart Number System Converter</span>
+    <span class="powered">
+      <img src="https://customer-assets.emergentagent.com/job_music-to-numbers/artifacts/eqmmw6fl_2316F097-7806-4D1F-AB36-BB5FF560800D.png" alt="">
+      Powered by Motesart Tech
+    </span>
     <span>motesart-converter.netlify.app</span>
   </div>
 </div>
