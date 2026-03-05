@@ -514,14 +514,13 @@ export default function Dashboard() {
   };
 
   /* ── Build styled HTML for PDF export ── */
-  const buildStyledPdfHtml = (): string => {
+  const buildStyledPdfHtml = (logoDataUrl: string): string => {
     if (!activeResult || !isSomTeachingEdition(activeResult)) return '';
     const d = activeResult;
-    const logoUrl = 'https://customer-assets.emergentagent.com/job_music-to-numbers/artifacts/eqmmw6fl_2316F097-7806-4D1F-AB36-BB5FF560800D.png';
+    const logo = logoDataUrl;
 
     let sectionsHtml = '';
     d.sections.forEach((sec, si) => {
-      // Key change divider (between sections)
       if (si > 0) {
         sectionsHtml += `<div style="display:flex;align-items:center;gap:12px;margin:20px 0 14px">
           <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,#c7d2fe,transparent)"></div>
@@ -565,19 +564,19 @@ export default function Dashboard() {
       sectionsHtml += `</div>`;
     });
 
-    return `<div id="pdf-export-root" style="width:8.5in;background:#fff;color:#1e293b;padding:0;font-family:Inter,Helvetica,Arial,sans-serif;position:relative">
+    return `<div id="pdf-export-root" style="background:#fff;color:#1e293b;padding:0;font-family:Inter,Helvetica,Arial,sans-serif">
       <div style="height:3px;background:linear-gradient(90deg,#6366f1,#06b6d4,#f97316)"></div>
-      <div style="display:flex;align-items:center;gap:18px;padding:28px 56px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
-        <img src="${logoUrl}" style="width:80px;height:80px;border-radius:14px;object-fit:cover" crossorigin="anonymous">
+      <div style="display:flex;align-items:center;gap:18px;padding:28px 40px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
+        <img src="${logo}" style="width:80px;height:80px;border-radius:14px;object-fit:cover">
         <div>
           <div style="font-size:26px;font-weight:700;color:#0f172a">Motesart Converter</div>
           <div style="font-size:12px;color:#94a3b8;margin-top:1px">SOM Teaching Edition</div>
         </div>
       </div>
-      <div style="padding:24px 56px 80px">
+      <div style="padding:24px 40px 40px">
         <div style="border-bottom:1px solid #e2e8f0;padding-bottom:18px;margin-bottom:24px">
-          <div style="font-size:26px;font-weight:700;color:#0f172a">${d.title} <span style="color:#6366f1">&mdash;</span> <span style="font-weight:400;font-size:16px;color:#94a3b8">SOM Teaching Edition</span></div>
-          <div style="display:flex;gap:28px;font-size:12px;color:#64748b;margin-top:8px">
+          <div style="font-size:24px;font-weight:700;color:#0f172a">${d.title} <span style="color:#6366f1">&mdash;</span> <span style="font-weight:400;font-size:15px;color:#94a3b8">SOM Teaching Edition</span></div>
+          <div style="display:flex;gap:24px;font-size:12px;color:#64748b;margin-top:8px;flex-wrap:wrap">
             <span><span style="font-weight:700;color:#334155">Keys:</span> ${d.metadata.keys.join(' &rarr; ')}</span>
             <span><span style="font-weight:700;color:#334155">Meter:</span> ${d.metadata.meter}</span>
             <span><span style="font-weight:700;color:#334155">Tempo:</span> ${d.metadata.tempo}</span>
@@ -586,9 +585,9 @@ export default function Dashboard() {
         </div>
         ${sectionsHtml}
       </div>
-      <div style="position:absolute;bottom:24px;left:56px;right:56px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding:10px 40px;margin-top:12px">
         <span style="display:flex;align-items:center;gap:5px">
-          <img src="${logoUrl}" style="width:14px;height:14px;border-radius:3px;object-fit:cover" crossorigin="anonymous">
+          <img src="${logo}" style="width:14px;height:14px;border-radius:3px;object-fit:cover">
           Powered by Motesart Technologies
         </span>
         <span>motesart-converter.netlify.app</span>
@@ -596,39 +595,68 @@ export default function Dashboard() {
     </div>`;
   };
 
+  /* ── Helper: load logo as base64 data URL via same-origin proxy ── */
+  const loadLogoBase64 = async (): Promise<string> => {
+    try {
+      const res = await fetch('/api/logo');
+      if (!res.ok) throw new Error('Logo fetch failed');
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      // Return a 1x1 transparent PNG as fallback
+      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    }
+  };
+
   /* ── Export ── */
   const handleExport = async (format: 'pdf' | 'csv' | 'text') => {
     if (!activeResult) return;
 
     if (format === 'pdf' && isSomTeachingEdition(activeResult)) {
-      // Styled PDF export using html2pdf.js
-      const html = buildStyledPdfHtml();
+      // Preload logo as base64 via same-origin proxy
+      const logoDataUrl = await loadLogoBase64();
+      const html = buildStyledPdfHtml(logoDataUrl);
       if (!html) return;
 
-      // Dynamically load html2pdf.js
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.onload = () => {
-        const container = document.createElement('div');
-        container.innerHTML = html;
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        document.body.appendChild(container);
-
-        const element = container.firstElementChild as HTMLElement;
+      // Dynamically load html2pdf.js (skip if already loaded)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const loadLib = (): Promise<void> => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const html2pdf = (window as any).html2pdf;
-        html2pdf().set({
-          margin: 0,
-          filename: `${activeResult.title || 'motesart-conversion'} - SOM Teaching Edition.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        }).from(element).save().then(() => {
-          document.body.removeChild(container);
+        if ((window as any).html2pdf) return Promise.resolve();
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          script.onload = () => resolve();
+          document.head.appendChild(script);
         });
       };
-      document.head.appendChild(script);
+      await loadLib();
+
+      const container = document.createElement('div');
+      container.innerHTML = html;
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.width = '816px'; // 8.5in at 96dpi
+      document.body.appendChild(container);
+
+      const element = container.firstElementChild as HTMLElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const html2pdf = (window as any).html2pdf;
+      await html2pdf().set({
+        margin: [0, 0, 0, 0],
+        filename: `${activeResult.title || 'motesart-conversion'} - SOM Teaching Edition.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, width: 816, windowWidth: 816 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      }).from(element).save();
+
+      document.body.removeChild(container);
     } else {
       // Plain text / CSV export
       const content = buildTextContent();
