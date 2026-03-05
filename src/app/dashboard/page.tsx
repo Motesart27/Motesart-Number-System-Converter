@@ -377,7 +377,6 @@ export default function Dashboard() {
       file: f,
     }));
     setUploadedFiles(prev => [...newFiles, ...prev]);
-    if (newFiles.length > 0) setActiveFileName(newFiles[0].name);
   };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
@@ -478,12 +477,10 @@ export default function Dashboard() {
     }
   }, [mode, manualInput, selectedKey, uploadedFiles]);
 
-  /* ── Export ── */
-  const handleExport = (format: 'pdf' | 'csv' | 'text') => {
-    if (!activeResult) return;
+  /* ── Build plain-text content for CSV/TEXT exports ── */
+  const buildTextContent = (): string => {
+    if (!activeResult) return '';
     let content = '';
-    const fileName = `motesart-conversion.${format === 'text' ? 'txt' : format}`;
-
     if (isSomTeachingEdition(activeResult)) {
       const d = activeResult;
       content += `${d.title} — ${d.subtitle}\n`;
@@ -513,13 +510,136 @@ export default function Dashboard() {
         content += '\n';
       });
     }
+    return content;
+  };
 
-    if (content) {
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = fileName; a.click();
-      URL.revokeObjectURL(url);
+  /* ── Build styled HTML for PDF export ── */
+  const buildStyledPdfHtml = (): string => {
+    if (!activeResult || !isSomTeachingEdition(activeResult)) return '';
+    const d = activeResult;
+    const logoUrl = 'https://customer-assets.emergentagent.com/job_music-to-numbers/artifacts/eqmmw6fl_2316F097-7806-4D1F-AB36-BB5FF560800D.png';
+
+    let sectionsHtml = '';
+    d.sections.forEach((sec, si) => {
+      // Key change divider (between sections)
+      if (si > 0) {
+        sectionsHtml += `<div style="display:flex;align-items:center;gap:12px;margin:20px 0 14px">
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,#c7d2fe,transparent)"></div>
+          <span style="font-size:10px;font-weight:700;color:#6366f1;background:#eef2ff;padding:3px 12px;border-radius:999px;border:1px solid #c7d2fe;white-space:nowrap">KEY CHANGE &rarr; ${sec.key}</span>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,#c7d2fe,transparent)"></div>
+        </div>`;
+      }
+
+      sectionsHtml += `<div style="margin-bottom:24px">
+        <div style="border-bottom:2px solid #e2e8f0;padding-bottom:10px;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:700;color:#0f172a">${sec.name} <span style="color:#6366f1">&mdash;</span> <span style="color:#0891b2">Key: 1 = ${sec.key}</span></div>
+          <div style="margin-top:6px">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px">Scale Reference</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#475569;margin-top:2px">${sec.scaleReference}</div>
+          </div>
+        </div>`;
+
+      sec.subsections.forEach(sub => {
+        sectionsHtml += `<div style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:5px">${sub.name}</div>`;
+
+        sub.lines.forEach(line => {
+          if (line.type === 'chords') {
+            sectionsHtml += `<div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#0891b2;background:#f0fdfa;border-left:3px solid #06b6d4;padding:5px 14px;border-radius:0 4px 4px 0;margin-bottom:2px;letter-spacing:1px">${line.som || line.original || ''}</div>`;
+            if (line.lyrics) {
+              sectionsHtml += `<div style="font-size:12px;color:#475569;padding-left:17px;margin-bottom:8px;line-height:1.5">${line.lyrics}</div>`;
+            }
+          } else if (line.type === 'notes') {
+            sectionsHtml += `<div style="background:#faf5ff;border-left:3px solid #a855f7;padding:8px 14px;border-radius:0 4px 4px 0;margin-bottom:8px">`;
+            if (line.label) sectionsHtml += `<div style="font-size:10px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px">${line.label}</div>`;
+            if (line.original) sectionsHtml += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#94a3b8;margin-top:2px">Original: ${line.original}</div>`;
+            if (line.som) sectionsHtml += `<div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#ea580c;margin-top:3px">SOM: ${line.som}</div>`;
+            sectionsHtml += `</div>`;
+          } else if (line.type === 'nc') {
+            sectionsHtml += `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;padding-left:17px;margin-bottom:1px">N.C.</div>`;
+            if (line.lyrics) sectionsHtml += `<div style="font-size:12px;color:#475569;padding-left:17px;margin-bottom:6px">${line.lyrics}</div>`;
+          }
+        });
+        sectionsHtml += `</div>`;
+      });
+      sectionsHtml += `</div>`;
+    });
+
+    return `<div id="pdf-export-root" style="width:8.5in;background:#fff;color:#1e293b;padding:0;font-family:Inter,Helvetica,Arial,sans-serif;position:relative">
+      <div style="height:3px;background:linear-gradient(90deg,#6366f1,#06b6d4,#f97316)"></div>
+      <div style="display:flex;align-items:center;gap:16px;padding:24px 56px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
+        <img src="${logoUrl}" style="width:56px;height:56px;border-radius:12px;object-fit:cover" crossorigin="anonymous">
+        <div>
+          <div style="font-size:24px;font-weight:700;color:#0f172a">Motesart Converter</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:1px">SOM Teaching Edition</div>
+        </div>
+      </div>
+      <div style="padding:24px 56px 80px">
+        <div style="border-bottom:1px solid #e2e8f0;padding-bottom:18px;margin-bottom:24px">
+          <div style="font-size:26px;font-weight:700;color:#0f172a">${d.title} <span style="color:#6366f1">&mdash;</span> <span style="font-weight:400;font-size:16px;color:#94a3b8">SOM Teaching Edition</span></div>
+          <div style="display:flex;gap:28px;font-size:12px;color:#64748b;margin-top:8px">
+            <span><span style="font-weight:700;color:#334155">Keys:</span> ${d.metadata.keys.join(' &rarr; ')}</span>
+            <span><span style="font-weight:700;color:#334155">Meter:</span> ${d.metadata.meter}</span>
+            <span><span style="font-weight:700;color:#334155">Tempo:</span> ${d.metadata.tempo}</span>
+            <span><span style="font-weight:700;color:#334155">Artist:</span> ${d.metadata.artist}</span>
+          </div>
+        </div>
+        ${sectionsHtml}
+      </div>
+      <div style="position:absolute;bottom:24px;left:56px;right:56px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px">
+        <span style="display:flex;align-items:center;gap:5px">
+          <img src="${logoUrl}" style="width:14px;height:14px;border-radius:3px;object-fit:cover" crossorigin="anonymous">
+          Powered by Motesart Technologies
+        </span>
+        <span>motesart-converter.netlify.app</span>
+      </div>
+    </div>`;
+  };
+
+  /* ── Export ── */
+  const handleExport = async (format: 'pdf' | 'csv' | 'text') => {
+    if (!activeResult) return;
+
+    if (format === 'pdf' && isSomTeachingEdition(activeResult)) {
+      // Styled PDF export using html2pdf.js
+      const html = buildStyledPdfHtml();
+      if (!html) return;
+
+      // Dynamically load html2pdf.js
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = () => {
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        document.body.appendChild(container);
+
+        const element = container.firstElementChild as HTMLElement;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const html2pdf = (window as any).html2pdf;
+        html2pdf().set({
+          margin: 0,
+          filename: `${activeResult.title || 'motesart-conversion'} - SOM Teaching Edition.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        }).from(element).save().then(() => {
+          document.body.removeChild(container);
+        });
+      };
+      document.head.appendChild(script);
+    } else {
+      // Plain text / CSV export
+      const content = buildTextContent();
+      const fileName = `motesart-conversion.${format === 'text' ? 'txt' : format}`;
+      if (content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName; a.click();
+        URL.revokeObjectURL(url);
+      }
     }
   };
 
