@@ -567,10 +567,10 @@ export default function Dashboard() {
 
     return `<div id="pdf-export-root" style="width:8.5in;background:#fff;color:#1e293b;padding:0;font-family:Inter,Helvetica,Arial,sans-serif;position:relative">
       <div style="height:3px;background:linear-gradient(90deg,#6366f1,#06b6d4,#f97316)"></div>
-      <div style="display:flex;align-items:center;gap:16px;padding:24px 56px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
-        <img src="${logoUrl}" style="width:56px;height:56px;border-radius:12px;object-fit:cover" crossorigin="anonymous">
+      <div style="display:flex;align-items:center;gap:18px;padding:28px 56px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
+        <img src="${logoUrl}" style="width:80px;height:80px;border-radius:14px;object-fit:cover" crossorigin="anonymous">
         <div>
-          <div style="font-size:24px;font-weight:700;color:#0f172a">Motesart Converter</div>
+          <div style="font-size:26px;font-weight:700;color:#0f172a">Motesart Converter</div>
           <div style="font-size:12px;color:#94a3b8;margin-top:1px">SOM Teaching Edition</div>
         </div>
       </div>
