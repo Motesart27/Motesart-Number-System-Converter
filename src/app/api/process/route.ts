@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
           }],
           generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 8192,
+            maxOutputTokens: 65536,
             responseMimeType: 'application/json',
           },
         }),
@@ -187,6 +187,15 @@ export async function POST(request: NextRequest) {
     const finishReason = geminiData.candidates?.[0]?.finishReason;
 
     console.log(`[process] Gemini returned ${rawText ? rawText.length : 0} chars, finishReason: ${finishReason}`);
+
+    // Check for truncated output
+    if (finishReason === 'MAX_TOKENS') {
+      console.error('[process] Gemini output was truncated (MAX_TOKENS). Response length:', rawText?.length);
+      return NextResponse.json(
+        { error: 'The music file produced too much content. Try uploading fewer pages at a time.' },
+        { status: 422 }
+      );
+    }
 
     if (!rawText) {
       console.error('[process] No text in Gemini response. Full response:', JSON.stringify(geminiData).substring(0, 500));
