@@ -43,9 +43,9 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
           "lines": [
             {
               "type": "chords",
-              "original": "F Bb C Bb",
-              "som": "1 4 5 4",
-              "lyrics": "Eh eh eh eh My God is good oh"
+              "original": "F  Bb    C          Bb",
+              "som":      "1  4     5          4",
+              "lyrics":   "Eh eh eh eh My God is good oh"
             },
             {
               "type": "notes",
@@ -70,18 +70,32 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
 - "nc": No chord section. Just lyrics with N.C. marking
 - "break": An instrumental break or transition with optional "label"
 
-## CHORD-LYRIC ALIGNMENT (CRITICAL)
-When a "chords" line has "lyrics", you MUST space-align the "som" field so each chord number sits directly above the word/syllable where that chord is played. Use spaces to pad the chord numbers to match the character position of the corresponding word in the lyrics.
+## CHORD-LYRIC ALIGNMENT (CRITICAL — FOLLOW EXACTLY)
+In the original sheet music, chord symbols (like F, Bb, C) appear ABOVE specific words/syllables. You MUST preserve this exact positioning when converting to SOM numbers.
 
-Example — if lyrics are "I love to tell how Jesus saved my soul" and chords change on "I", "tell", "Jesus", "soul":
-  "som":    "1              4       5            1"
-  "lyrics": "I love to tell how Je-sus saved my soul"
+STEP-BY-STEP PROCESS for each chord line with lyrics:
+1. Look at the original sheet music — note EXACTLY which word or syllable each chord sits above.
+2. Write out the "lyrics" string first.
+3. For the "som" string, place each SOM number at the EXACT same character index as the first letter of the word/syllable it belongs to in the lyrics string.
+4. Fill all other positions with space characters.
+5. The "som" and "lyrics" strings MUST be the same length (or som can be shorter if the last chord is before the last word).
 
-The chord number must START at the same character index as the word it belongs to. Pad with spaces so they visually align when displayed in a monospace font. This is the traditional chord chart format.
+EXAMPLE — Original has: F over "I", Bb over "tell", C over "Je-", F over "soul":
+  "som":    "1              4        5           1"
+  "lyrics": "I love to tell how Je - sus saved my soul"
+  (F→1 at index 0, Bb→4 at index 15, C→5 at index 24, F→1 at index 36)
 
-Another example — if lyrics are "Amazing grace how sweet the sound" with chords on "Amazing" and "sweet":
-  "som":    "1              4"
+EXAMPLE — Original has: F over "Amazing", Bb over "sweet":
+  "som":    "1               4"
   "lyrics": "Amazing grace how sweet the sound"
+  (F→1 at index 0, Bb→4 at index 18)
+
+EXAMPLE — Original has: Bb over "You", F over "and", C over "mercy", Dm over "Hallelujah":
+  "som":    "4               1              5                      6m"
+  "lyrics": "You are good and Your mercy is forever Hallelujah"
+  (Bb→4 at index 0, F→1 at index 16, C→5 at index 31, Dm→6m at index 53)
+
+VERIFY: After generating each pair, mentally count characters to confirm each SOM number starts at the same position as its corresponding word in the lyrics. If they don't align, fix the spacing before outputting.
 
 ## CRITICAL RULES
 1. The scaleReference line shows number-to-letter mapping: "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)"
@@ -95,7 +109,7 @@ Another example — if lyrics are "Amazing grace how sweet the sound" with chord
 9. Handle N.C. (No Chord) sections properly
 10. For note sequences use dashes: "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
 11. Output ONLY valid JSON. No explanations, no markdown fences.
-12. ALWAYS space-align "som" with "lyrics" for chord lines as described above.`;
+12. ALWAYS space-align "som" with "lyrics" — each chord number must start at the EXACT character index of the word/syllable it belongs to. Look at where the chord symbols appear in the original sheet music above the lyrics and replicate that positioning exactly. This is the #1 most important formatting rule.`;
 
 export async function POST(request: NextRequest) {
   try {
