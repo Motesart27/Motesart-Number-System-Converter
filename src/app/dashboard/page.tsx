@@ -223,13 +223,9 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 <div key={li} className="space-y-0.5">
                   {line.type === 'chords' && (
                     <div className="bg-[#1e293b]/30 px-3 py-2 rounded">
-                      <pre className="font-mono font-bold text-sm text-[#06b6d4] whitespace-pre leading-snug m-0">
-                        {line.som || line.original}
-                      </pre>
+                      <pre className="font-mono font-bold text-sm text-[#06b6d4] whitespace-pre leading-snug m-0">{line.som || line.original}</pre>
                       {line.lyrics && (
-                        <pre className="font-mono text-sm text-[#94a3b8] whitespace-pre leading-snug m-0">
-                          {line.lyrics}
-                        </pre>
+                        <pre className="font-mono text-sm text-[#94a3b8] whitespace-pre leading-snug m-0">{line.lyrics}</pre>
                       )}
                     </div>
                   )}
@@ -622,45 +618,47 @@ export default function Dashboard() {
     if (!activeResult) return;
 
     if (format === 'pdf' && isSomTeachingEdition(activeResult)) {
-      // Preload logo as base64 via same-origin proxy
-      const logoDataUrl = await loadLogoBase64();
-      const html = buildStyledPdfHtml(logoDataUrl);
-      if (!html) return;
+      try {
+        // Preload logo as base64 via same-origin proxy
+        const logoDataUrl = await loadLogoBase64();
+        const html = buildStyledPdfHtml(logoDataUrl);
+        if (!html) return;
 
-      // Dynamically load html2pdf.js (skip if already loaded)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const loadLib = (): Promise<void> => {
+        // Dynamic import of html2pdf.js (bundled via npm)
+        const html2pdfModule = await import('html2pdf.js');
+        const html2pdf = html2pdfModule.default;
+
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = '816px';
+        document.body.appendChild(container);
+
+        const element = container.firstElementChild as HTMLElement;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).html2pdf) return Promise.resolve();
-        return new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        });
-      };
-      await loadLib();
+        await (html2pdf() as any).set({
+          margin: [0, 0, 0, 0],
+          filename: `${activeResult.title || 'motesart-conversion'} - SOM Teaching Edition.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, width: 816, windowWidth: 816 },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+        }).from(element).save();
 
-      const container = document.createElement('div');
-      container.innerHTML = html;
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.width = '816px'; // 8.5in at 96dpi
-      document.body.appendChild(container);
-
-      const element = container.firstElementChild as HTMLElement;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const html2pdf = (window as any).html2pdf;
-      await html2pdf().set({
-        margin: [0, 0, 0, 0],
-        filename: `${activeResult.title || 'motesart-conversion'} - SOM Teaching Edition.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, width: 816, windowWidth: 816 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      }).from(element).save();
-
-      document.body.removeChild(container);
+        document.body.removeChild(container);
+      } catch (err) {
+        console.error('PDF export error:', err);
+        // Fallback to plain text download
+        const content = buildTextContent();
+        if (content) {
+          const blob = new Blob([content], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = `${activeResult.title || 'motesart-conversion'} - SOM Teaching Edition.txt`; a.click();
+          URL.revokeObjectURL(url);
+        }
+      }
     } else {
       // Plain text / CSV export
       const content = buildTextContent();
