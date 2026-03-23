@@ -296,13 +296,13 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                   <span className="text-xs font-semibold text-[#f97316]">Original Chords</span>
                 </div>
                 <div className="p-3">
-                  {data.sections.map((sec, si) => (
+                  {(data.sections || []).map((sec, si) => (
                     <div key={si} className="mb-4">
                       <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} — Key: {sec.key}</p>
-                      {sec.subsections.map((sub, ssi) => (
+                      {(sec.subsections || []).map((sub, ssi) => (
                         <div key={ssi} className="mb-2">
                           <p className="text-xs font-bold text-[#334155] mb-1">{sub.name}</p>
-                          {renderLines(sub.lines, true, false)}
+                          {renderLines((sub.lines || []), true, false)}
                         </div>
                       ))}
                     </div>
@@ -320,13 +320,13 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                   <span className="text-xs font-semibold text-[#06b6d4]">Motesart Number System</span>
                 </div>
                 <div className="p-3">
-                  {data.sections.map((sec, si) => (
+                  {(data.sections || []).map((sec, si) => (
                     <div key={si} className="mb-4">
                       <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} — Key: 1 = {sec.key}</p>
-                      {sec.subsections.map((sub, ssi) => (
+                      {(sec.subsections || []).map((sub, ssi) => (
                         <div key={ssi} className="mb-2">
                           <p className="text-xs font-bold text-[#334155] mb-1">{sub.name}</p>
-                          {renderLines(sub.lines, false, true)}
+                          {renderLines((sub.lines || []), false, true)}
                         </div>
                       ))}
                     </div>
@@ -344,16 +344,16 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 </span>
               </div>
               <div className="p-3">
-                {data.sections.map((sec, si) => (
+                {(data.sections || []).map((sec, si) => (
                   <div key={si} className="mb-4">
                     <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">
                       {sec.name} — {viewMode === 'original' ? 'Key: ' + sec.key : 'Key: 1 = ' + sec.key}
                     </p>
-                    <p className="font-mono text-[11px] text-[#475569] mb-2">{sec.scaleReference}</p>
-                    {sec.subsections.map((sub, ssi) => (
+                    <p className="font-mono text-[11px] text-[#475569] mb-2">{sec.scaleReference || ''}</p>
+                    {(sec.subsections || []).map((sub, ssi) => (
                       <div key={ssi} className="mb-3">
                         <p className="text-xs font-bold text-[#1e293b] mb-1">{sub.name}</p>
-                        {renderLines(sub.lines, viewMode === 'original', viewMode === 'numbers')}
+                        {renderLines((sub.lines || []), viewMode === 'original', viewMode === 'numbers')}
                       </div>
                     ))}
                   </div>
@@ -371,7 +371,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
           <div className="bg-[#6366f1]/8 border border-[#6366f1]/15 rounded-lg p-3">
             <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-1">Key Detected</p>
             <p className="text-lg font-extrabold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'} Major</p>
-            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + data.metadata.keys.join(' \u2192 ') : 'No key changes'}</p>
+            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + (data.metadata?.keys || []).join(' \u2192 ') : 'No key changes'}</p>
           </div>
 
           {/* Number System Home + Scale Map */}
@@ -380,7 +380,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
             <p className="text-base font-extrabold text-white">{data.homeNumber || ((data.detectedKey || data.metadata?.keys?.[0] || 'C') + ' = 1')}</p>
             {data.scaleMap && data.scaleMap.length > 0 && (
               <div className="mt-2 grid grid-cols-4 gap-1">
-                {data.scaleMap.map((m: string, i: number) => (
+                {(data.scaleMap || []).map((m: string, i: number) => (
                   <span key={i} className="text-[9px] font-mono bg-white/[0.06] px-1 py-0.5 rounded text-center text-[#94a3b8]">{m}</span>
                 ))}
               </div>
@@ -392,7 +392,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3">
               <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord Translations</p>
               <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
-                {data.chordTranslations.map((ct: ChordTranslation, i: number) => (
+                {(data.chordTranslations || []).map((ct: ChordTranslation, i: number) => (
                   <div key={i} className="flex items-center gap-1.5 text-xs">
                     <span className="font-mono font-semibold text-[#f97316] min-w-[28px]">{ct.original}</span>
                     <span className="text-[#475569] text-[10px]">\u2192</span>
@@ -429,7 +429,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
             <div className="bg-[#eab308]/8 border border-[#eab308]/15 rounded-lg p-3">
               <p className="text-[10px] font-semibold text-[#eab308] uppercase tracking-wider mb-2">Special Cases</p>
               <div className="space-y-1.5">
-                {data.specialCases.map((sc: string, i: number) => (
+                {(data.specialCases || []).map((sc: string, i: number) => (
                   <div key={i} className="flex items-start gap-1.5">
                     <span className="text-[#eab308] text-[10px] mt-0.5">\u26a0</span>
                     <p className="text-[10px] text-[#94a3b8] leading-tight">{sc}</p>
@@ -444,7 +444,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
             <div className="bg-white/[0.02] border border-white/[0.05] rounded-lg p-3">
               <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions Made</p>
               <div className="space-y-1">
-                {data.assumptions.map((a: string, i: number) => (
+                {(data.assumptions || []).map((a: string, i: number) => (
                   <p key={i} className="text-[10px] text-[#475569] leading-tight">\u2022 {a}</p>
                 ))}
               </div>
@@ -485,7 +485,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 <div className="mt-2">
                   <p className="text-[10px] text-[#64748b] mb-1">Scale degree map:</p>
                   <div className="flex gap-2 flex-wrap">
-                    {data.scaleMap.map((m: string, i: number) => (
+                    {(data.scaleMap || []).map((m: string, i: number) => (
                       <span key={i} className="font-mono text-xs bg-[#6366f1]/10 text-[#a5b4fc] px-2 py-0.5 rounded">{m}</span>
                     ))}
                   </div>
@@ -498,7 +498,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               <div>
                 <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord-by-Chord Mapping</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {data.chordTranslations.map((ct: ChordTranslation, i: number) => (
+                  {(data.chordTranslations || []).map((ct: ChordTranslation, i: number) => (
                     <div key={i} className={"flex items-center gap-2 text-xs px-2 py-1.5 rounded " + (ct.specialCase ? "bg-[#eab308]/8 border border-[#eab308]/15" : "bg-white/[0.02]")}>
                       <span className="font-mono font-bold text-[#f97316] w-[36px]">{ct.original}</span>
                       <span className="text-[#475569]">\u2192</span>
@@ -516,7 +516,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               <div>
                 <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions & Simplifications</p>
                 <div className="space-y-1">
-                  {data.assumptions.map((a: string, i: number) => (
+                  {(data.assumptions || []).map((a: string, i: number) => (
                     <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">\u2022 {a}</p>
                   ))}
                 </div>
@@ -528,7 +528,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               <div>
                 <p className="text-[10px] font-semibold text-[#ef4444] uppercase tracking-wider mb-2">Validation Warnings</p>
                 <div className="space-y-1">
-                  {data._validation.warnings.map((w: {type: string; message: string}, i: number) => (
+                  {(data._validation?.warnings || []).map((w: {type: string; message: string}, i: number) => (
                     <div key={i} className="flex items-start gap-1.5 text-[10px]">
                       <span className="text-[#ef4444] mt-0.5">\u26a0</span>
                       <span className="text-[#94a3b8]">{w.message}</span>
@@ -543,7 +543,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               <div>
                 <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-2">Confidence Factors</p>
                 <div className="space-y-1">
-                  {data.conversionConfidence.reasons.map((r: string, i: number) => (
+                  {(data.conversionConfidence?.reasons || []).map((r: string, i: number) => (
                     <p key={i} className="text-[10px] text-[#94a3b8]">\u2022 {r}</p>
                   ))}
                 </div>
