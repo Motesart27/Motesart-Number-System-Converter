@@ -582,13 +582,13 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
 function OldResultView({ result, originalPreview }: { result: OldConversionResult; originalPreview: boolean }) {
   return (
     <div className="space-y-4">
-      {result.sections.map((section, si) => (
+      {(result.sections || []).map((section, si) => (
         <div key={si}>
           <h3 className="text-xs font-bold text-[#06b6d4] mb-2 uppercase tracking-wider">
             {section.name}
           </h3>
           <div className="space-y-2">
-            {section.lines.map((line, li) => {
+            {(section.lines || []).map((line, li) => {
               if (line.type === 'empty') return <div key={li} className="h-2" />;
               return (
                 <div key={li} className="space-y-0.5">
@@ -745,7 +745,12 @@ export default function Dashboard() {
         try {
           const res = await fetch('/api/process', { method: 'POST', body: formData, signal: controller.signal });
           clearTimeout(clientTimeout);
-          const result = await res.json();
+          let result;
+          try {
+            result = await res.json();
+          } catch {
+            throw new Error('Server returned an invalid response — the file may be too large or processing timed out.');
+          }
 
           if (res.ok) {
             setActiveResult(result);
@@ -770,7 +775,7 @@ export default function Dashboard() {
           const isTimeout = fetchErr instanceof Error && fetchErr.name === 'AbortError';
           setUploadedFiles(prev => prev.map(f =>
             f.name === fileToProcess.name
-              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out â try again or use a smaller file' : 'Network error â check your connection' }
+              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out â try again or use a smaller file' : (fetchErr instanceof Error ? fetchErr.message : 'Processing failed â please try again') }
               : f
           ));
         }
@@ -780,7 +785,7 @@ export default function Dashboard() {
     } finally {
       setIsProcessing(false);
     }
-  }, [mode, manualInput, selectedKey, uploadedFiles]);
+  }, [mode, manualInput, selectedKey, uploadedFiles, converterMode]);
 
   /* ââ Build plain-text content for CSV/TEXT exports ââ */
   const buildTextContent = (): string => {
