@@ -1,16 +1,5 @@
 'use client';
 
-// Transition animation styles
-const fadeInStyles = `
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.som-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
-.som-fade-in-delay { animation: fadeInUp 0.5s ease-out 0.15s forwards; opacity: 0; }
-.som-fade-in-delay-2 { animation: fadeInUp 0.5s ease-out 0.3s forwards; opacity: 0; }
-`;
-
 import { useState, useRef, useCallback } from 'react';
 import {
   Upload,
@@ -29,6 +18,18 @@ import {
   Info,
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
+
+// Transition animation styles
+const fadeInStyles = `
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.som-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+.som-fade-in-delay { animation: fadeInUp 0.5s ease-out 0.15s forwards; opacity: 0; }
+.som-fade-in-delay-2 { animation: fadeInUp 0.5s ease-out 0.3s forwards; opacity: 0; }
+`;
+
 
 /* ââ Old engine types (for manual text conversion) ââ */
 interface MotesartChordResult {
@@ -216,6 +217,7 @@ function SomLegendCard() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
@@ -1413,6 +1415,5 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
-  </>
   );
 }
