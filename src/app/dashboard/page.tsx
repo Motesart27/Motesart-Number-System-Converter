@@ -1,3 +1,94 @@
+
+      {/* HOW WE CONVERTED THIS — Collapsible Drawer */}
+      <div className="mt-4">
+        <button
+          onClick={() => setShowExplanation(!showExplanation)}
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:bg-white/[0.05] transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm">\ud83d\udd0d</span>
+            <span className="text-xs font-semibold text-white">How we converted this</span>
+          </div>
+          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>\u25bc</span>
+        </button>
+        {showExplanation && (
+          <div className="mt-2 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 space-y-4">
+            {/* Detected Key & Scale */}
+            <div>
+              <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Key Detection</p>
+              <p className="text-xs text-[#94a3b8]">Detected key: <span className="font-bold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'}</span></p>
+              {data.homeNumber && <p className="text-xs text-[#94a3b8] mt-1">Home number: <span className="font-bold text-[#06b6d4]">{data.homeNumber}</span></p>}
+              {data.scaleMap && data.scaleMap.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[10px] text-[#64748b] mb-1">Scale degree map:</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {data.scaleMap.map((m: string, i: number) => (
+                      <span key={i} className="font-mono text-xs bg-[#6366f1]/10 text-[#a5b4fc] px-2 py-0.5 rounded">{m}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Each Chord Mapping */}
+            {data.chordTranslations && data.chordTranslations.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord-by-Chord Mapping</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {data.chordTranslations.map((ct: ChordTranslation, i: number) => (
+                    <div key={i} className={"flex items-center gap-2 text-xs px-2 py-1.5 rounded " + (ct.specialCase ? "bg-[#eab308]/8 border border-[#eab308]/15" : "bg-white/[0.02]")}>
+                      <span className="font-mono font-bold text-[#f97316] w-[36px]">{ct.original}</span>
+                      <span className="text-[#475569]">\u2192</span>
+                      <span className="font-mono font-bold text-[#06b6d4] w-[36px]">{ct.converted}</span>
+                      <span className="text-[10px] text-[#64748b] flex-1 truncate">{ct.reason}</span>
+                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">\u26a0</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assumptions & Simplifications */}
+            {data.assumptions && data.assumptions.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions & Simplifications</p>
+                <div className="space-y-1">
+                  {data.assumptions.map((a: string, i: number) => (
+                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">\u2022 {a}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Validation Details */}
+            {data._validation && !data._validation.valid && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#ef4444] uppercase tracking-wider mb-2">Validation Warnings</p>
+                <div className="space-y-1">
+                  {data._validation.warnings.map((w: {type: string; message: string}, i: number) => (
+                    <div key={i} className="flex items-start gap-1.5 text-[10px]">
+                      <span className="text-[#ef4444] mt-0.5">\u26a0</span>
+                      <span className="text-[#94a3b8]">{w.message}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Confidence Reasons */}
+            {data.conversionConfidence?.reasons && data.conversionConfidence.reasons.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-2">Confidence Factors</p>
+                <div className="space-y-1">
+                  {data.conversionConfidence.reasons.map((r: string, i: number) => (
+                    <p key={i} className="text-[10px] text-[#94a3b8]">\u2022 {r}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
@@ -19,7 +110,7 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 
-/* ── Old engine types (for manual text conversion) ── */
+/* ââ Old engine types (for manual text conversion) ââ */
 interface MotesartChordResult {
   symbol: string;
   original: string;
@@ -42,7 +133,7 @@ interface OldConversionResult {
   detectedProgressions: { pattern: string; name: string }[];
 }
 
-/* ── NEW SOM Teaching Edition types (from Gemini) ── */
+/* ââ NEW SOM Teaching Edition types (from Gemini) ââ */
 interface SomLine {
   type: 'chords' | 'notes' | 'nc' | 'break';
   original?: string;
@@ -60,6 +151,34 @@ interface SomSection {
   scaleReference: string;
   subsections: SomSubsection[];
 }
+interface ChordTranslation {
+  original: string;
+  converted: string;
+  reason: string;
+  confidence: number;
+  specialCase?: boolean;
+}
+
+interface ConversionConfidence {
+  overall: number;
+  totalChords: number;
+  resolvedChords: number;
+  ambiguousCount: number;
+  reasons: string[];
+}
+
+interface RenderHints {
+  viewType: 'lead_sheet' | 'hymn' | 'plain_text';
+  lyricAlignment: 'word' | 'syllable';
+  editionType: 'quick' | 'curriculum' | 'compliance';
+}
+
+interface ValidationResult {
+  valid: boolean;
+  warnings: Array<{ type: string; message: string; chord?: string }>;
+  checkedAt: string;
+}
+
 interface SomTeachingEdition {
   format: 'som-teaching-edition';
   title: string;
@@ -70,6 +189,15 @@ interface SomTeachingEdition {
     tempo: number;
     artist: string;
   };
+  detectedKey?: string;
+  homeNumber?: string;
+  scaleMap?: string[];
+  chordTranslations?: ChordTranslation[];
+  conversionConfidence?: ConversionConfidence;
+  specialCases?: string[];
+  assumptions?: string[];
+  renderHints?: RenderHints;
+  _validation?: ValidationResult;
   sections: SomSection[];
 }
 
@@ -91,7 +219,7 @@ function isSomTeachingEdition(r: ActiveResult): r is SomTeachingEdition {
   return r && (r as SomTeachingEdition).format === 'som-teaching-edition';
 }
 
-/* ── SOM Legend Card ── */
+/* ââ SOM Legend Card ââ */
 function SomLegendCard() {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -131,8 +259,8 @@ function SomLegendCard() {
 
           <div>
             <p className="text-[#94a3b8] font-semibold mb-1">Chromatic Half-Numbers</p>
-            <p className="font-mono text-[#f97316]">1½ &nbsp; 2½ &nbsp; 4½ &nbsp; 5½ &nbsp; 6½</p>
-            <p className="text-[#64748b] mt-0.5">No 3½ or 7½ (E-F and B-C are natural half steps)</p>
+            <p className="font-mono text-[#f97316]">1Â½ &nbsp; 2Â½ &nbsp; 4Â½ &nbsp; 5Â½ &nbsp; 6Â½</p>
+            <p className="text-[#64748b] mt-0.5">No 3Â½ or 7Â½ (E-F and B-C are natural half steps)</p>
           </div>
 
           <div>
@@ -141,7 +269,7 @@ function SomLegendCard() {
               <p><span className="font-mono text-white">1, 4, 5</span> = diatonic major (no modifier)</p>
               <p><span className="font-mono text-white">m</span> = minor <span className="text-[#64748b]">(e.g., 6m = Am in C)</span></p>
               <p><span className="font-mono text-white">M</span> = non-diatonic major <span className="text-[#64748b]">(e.g., 2M = D major in C)</span></p>
-              <p><span className="font-mono text-white">°</span> = diminished &nbsp; <span className="font-mono text-white">+</span> = augmented</p>
+              <p><span className="font-mono text-white">Â°</span> = diminished &nbsp; <span className="font-mono text-white">+</span> = augmented</p>
             </div>
           </div>
 
@@ -162,118 +290,273 @@ function SomLegendCard() {
   );
 }
 
-/* ── SOM Teaching Edition Renderer ── */
+/* ââ SOM Teaching Edition Renderer ââ */
 function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
+  const [viewMode, setViewMode] = useState<'original' | 'numbers' | 'side-by-side'>('side-by-side');
+  const [converterMode, setConverterMode] = useState<'quick' | 'curriculum' | 'compliance'>('quick');
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  /* Helper: render a single section's lines */
+  const renderLines = (lines: SomLine[], showOriginal: boolean, showSom: boolean) => (
+    <div className="space-y-1.5">
+      {lines.map((line, li) => {
+        if (line.type === 'chords') {
+          return (
+            <div key={li} className="px-3 py-1.5">
+              {showOriginal && line.original && (
+                <pre className="font-mono font-bold text-sm text-[#f97316] whitespace-pre leading-snug m-0">{line.original}</pre>
+              )}
+              {showSom && (line.som || line.original) && (
+                <pre className="font-mono font-bold text-sm text-[#06b6d4] whitespace-pre leading-snug m-0">{line.som || line.original}</pre>
+              )}
+              {line.lyrics && (
+                <pre className="font-mono text-sm text-[#94a3b8] whitespace-pre leading-snug m-0">{line.lyrics}</pre>
+              )}
+            </div>
+          );
+        } else if (line.type === 'notes') {
+          return (
+            <div key={li} className="bg-[#1e1338]/40 border-l-2 border-[#a855f7] px-3 py-1.5 rounded-r">
+              {line.label && <p className="text-[10px] font-semibold text-[#7c3aed] uppercase tracking-wider">{line.label}</p>}
+              {showOriginal && line.original && <p className="font-mono text-xs text-[#f97316]">{line.original}</p>}
+              {showSom && line.som && <p className="font-mono text-sm font-bold text-[#06b6d4]">{line.som}</p>}
+            </div>
+          );
+        } else if (line.type === 'nc') {
+          return (
+            <div key={li} className="px-3 py-1">
+              <span className="font-mono text-xs text-[#64748b]">N.C.</span>
+              {line.lyrics && <pre className="font-mono text-sm text-[#94a3b8] whitespace-pre m-0">{line.lyrics}</pre>}
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-[#1e293b] pb-4">
-        <h2 className="text-xl font-bold text-white mb-1">
-          {data.title} <span className="text-[#6366f1]">&mdash;</span>{' '}
-          <span className="text-[#94a3b8] font-normal text-base">{data.subtitle}</span>
-        </h2>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mt-2">
-          {data.metadata?.keys?.length > 0 && (
-            <p className="text-[#94a3b8]">
-              <span className="font-semibold text-white">Keys:</span>{' '}
-              {data.metadata.keys.join(' → ')}
-            </p>
-          )}
-          {data.metadata?.meter && (
-            <p className="text-[#94a3b8]">
-              <span className="font-semibold text-white">Meter:</span> {data.metadata.meter}
-            </p>
-          )}
-          {data.metadata?.tempo && (
-            <p className="text-[#94a3b8]">
-              <span className="font-semibold text-white">Tempo:</span> {data.metadata.tempo}
-            </p>
-          )}
-          {data.metadata?.artist && (
-            <p className="text-[#94a3b8]">
-              <span className="font-semibold text-white">Artist:</span> {data.metadata.artist}
-            </p>
-          )}
+    <div className="space-y-4">
+      {/* MODE TABS */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1.5">
+          {(['quick', 'curriculum', 'compliance'] as const).map(mode => (
+            <button key={mode} onClick={() => setConverterMode(mode)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${converterMode === mode
+                ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg shadow-indigo-500/20'
+                : 'bg-white/[0.03] text-[#475569] border border-white/[0.06] hover:bg-white/[0.06]'}`}>
+              {mode === 'quick' ? 'Quick Convert' : mode === 'curriculum' ? 'Curriculum Convert' : 'Compliance Convert'}
+            </button>
+          ))}
+        </div>
+        {/* VIEW TOGGLE */}
+        <div className="flex gap-0.5 bg-white/[0.03] rounded-lg p-0.5 border border-white/[0.06]">
+          {(['original', 'numbers', 'side-by-side'] as const).map(v => (
+            <button key={v} onClick={() => setViewMode(v)}
+              className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${viewMode === v
+                ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white'
+                : 'text-[#64748b] hover:text-white'}`}>
+              {v === 'side-by-side' ? 'Side-by-Side' : v === 'original' ? 'Original' : 'Numbers'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Sections */}
-      {data.sections?.map((section, si) => (
-        <div key={si} className="space-y-4">
-          {/* Section Header with Key */}
-          <div className="border-b border-[#334155] pb-3">
-            <h3 className="text-lg font-bold text-white">
-              {section.name} <span className="text-[#6366f1]">&mdash;</span>{' '}
-              <span className="text-[#06b6d4]">Key: 1 = {section.key}</span>
-            </h3>
-            {section.scaleReference && (
-              <div className="mt-2">
-                <span className="text-xs text-[#64748b]">Scale reference</span>
-                <p className="font-mono text-sm text-[#94a3b8] mt-0.5">{section.scaleReference}</p>
+      {/* TITLE BAR */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center">
+          <Music className="w-5 h-5 text-[#06b6d4]" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-white">{data.title}</h2>
+          <p className="text-[11px] text-[#64748b]">SOM Teaching Edition</p>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex gap-3">
+        {/* LEFT/MAIN: CONVERSION PANELS */}
+        <div className="flex-1 min-w-0">
+          {viewMode === 'side-by-side' ? (
+            /* SIDE-BY-SIDE */
+            <div className="flex gap-2">
+              {/* Original */}
+              <div className="flex-1 bg-[#111827] border border-white/[0.06] rounded-xl overflow-hidden">
+                <div className="px-3 py-2 bg-white/[0.02] border-b border-white/[0.06] flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#f97316]" />
+                  <span className="text-xs font-semibold text-[#f97316]">Original Chords</span>
+                </div>
+                <div className="p-3">
+                  {data.sections.map((sec, si) => (
+                    <div key={si} className="mb-4">
+                      <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} — Key: {sec.key}</p>
+                      {sec.subsections.map((sub, ssi) => (
+                        <div key={ssi} className="mb-2">
+                          <p className="text-xs font-bold text-[#334155] mb-1">{sub.name}</p>
+                          {renderLines(sub.lines, true, false)}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Arrow */}
+              <div className="flex items-center justify-center w-8 shrink-0">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6366f1] to-[#06b6d4] flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/30">→</div>
+              </div>
+              {/* Numbers */}
+              <div className="flex-1 bg-[#111827] border border-[#06b6d4]/15 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.05)]">
+                <div className="px-3 py-2 bg-[#06b6d4]/5 border-b border-[#06b6d4]/10 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#06b6d4]" />
+                  <span className="text-xs font-semibold text-[#06b6d4]">Motesart Number System</span>
+                </div>
+                <div className="p-3">
+                  {data.sections.map((sec, si) => (
+                    <div key={si} className="mb-4">
+                      <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} — Key: 1 = {sec.key}</p>
+                      {sec.subsections.map((sub, ssi) => (
+                        <div key={ssi} className="mb-2">
+                          <p className="text-xs font-bold text-[#334155] mb-1">{sub.name}</p>
+                          {renderLines(sub.lines, false, true)}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* SINGLE VIEW: Original or Numbers */
+            <div className="bg-[#111827] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className={`px-3 py-2 border-b flex items-center gap-2 ${viewMode === 'original' ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-[#06b6d4]/5 border-[#06b6d4]/10'}`}>
+                <div className={`w-2 h-2 rounded-full ${viewMode === 'original' ? 'bg-[#f97316]' : 'bg-[#06b6d4]'}`} />
+                <span className={`text-xs font-semibold ${viewMode === 'original' ? 'text-[#f97316]' : 'text-[#06b6d4]'}`}>
+                  {viewMode === 'original' ? 'Original Chords' : 'Motesart Number System'}
+                </span>
+              </div>
+              <div className="p-3">
+                {data.sections.map((sec, si) => (
+                  <div key={si} className="mb-4">
+                    <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">
+                      {sec.name} — {viewMode === 'original' ? 'Key: ' + sec.key : 'Key: 1 = ' + sec.key}
+                    </p>
+                    <p className="font-mono text-[11px] text-[#475569] mb-2">{sec.scaleReference}</p>
+                    {sec.subsections.map((sub, ssi) => (
+                      <div key={ssi} className="mb-3">
+                        <p className="text-xs font-bold text-[#1e293b] mb-1">{sub.name}</p>
+                        {renderLines(sub.lines, viewMode === 'original', viewMode === 'numbers')}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT PANEL: CONVERSION SUMMARY */}
+        <div className="w-[240px] shrink-0 space-y-3 overflow-y-auto max-h-[calc(100vh-200px)]">
+          <p className="text-xs font-bold text-white">Conversion Summary</p>
+
+          {/* Key Detected */}
+          <div className="bg-[#6366f1]/8 border border-[#6366f1]/15 rounded-lg p-3">
+            <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-1">Key Detected</p>
+            <p className="text-lg font-extrabold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'} Major</p>
+            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + data.metadata.keys.join(' \u2192 ') : 'No key changes'}</p>
+          </div>
+
+          {/* Number System Home + Scale Map */}
+          <div className="bg-[#06b6d4]/8 border border-[#06b6d4]/15 rounded-lg p-3">
+            <p className="text-[10px] font-semibold text-[#06b6d4] uppercase tracking-wider mb-1">Number Home</p>
+            <p className="text-base font-extrabold text-white">{data.homeNumber || ((data.detectedKey || data.metadata?.keys?.[0] || 'C') + ' = 1')}</p>
+            {data.scaleMap && data.scaleMap.length > 0 && (
+              <div className="mt-2 grid grid-cols-4 gap-1">
+                {data.scaleMap.map((m: string, i: number) => (
+                  <span key={i} className="text-[9px] font-mono bg-white/[0.06] px-1 py-0.5 rounded text-center text-[#94a3b8]">{m}</span>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Subsections */}
-          {section.subsections?.map((sub, subi) => (
-            <div key={subi} className="space-y-2">
-              <h4 className="text-base font-bold text-white">{sub.name}</h4>
-
-              {sub.lines?.map((line, li) => (
-                <div key={li} className="space-y-0.5">
-                  {line.type === 'chords' && (
-                    <div className="bg-[#1e293b]/30 px-3 py-2 rounded">
-                      <pre className="font-mono font-bold text-sm text-[#06b6d4] whitespace-pre leading-snug m-0">{line.som || line.original}</pre>
-                      {line.lyrics && (
-                        <pre className="font-mono text-sm text-[#94a3b8] whitespace-pre leading-snug m-0">{line.lyrics}</pre>
-                      )}
-                    </div>
-                  )}
-
-                  {line.type === 'notes' && (
-                    <div className="bg-[#1e293b]/30 px-3 py-2 rounded space-y-1">
-                      {line.label && (
-                        <p className="text-xs font-semibold text-[#a855f7]">{line.label}</p>
-                      )}
-                      {line.original && (
-                        <p className="text-xs text-[#64748b] font-mono">Original: {line.original}</p>
-                      )}
-                      <p className="font-mono font-bold text-sm text-[#f97316]">
-                        SOM: {line.som}
-                      </p>
-                    </div>
-                  )}
-
-                  {line.type === 'nc' && (
-                    <>
-                      <p className="font-mono text-xs text-[#64748b] px-3">N.C.</p>
-                      {line.lyrics && (
-                        <p className="text-sm text-[#94a3b8] pl-3">{line.lyrics}</p>
-                      )}
-                    </>
-                  )}
-
-                  {line.type === 'break' && (
-                    <div className="px-3 py-1">
-                      <p className="text-xs font-semibold text-[#a855f7] italic">
-                        {line.label || 'Instrumental Break'}
-                      </p>
-                      {line.som && (
-                        <p className="font-mono font-bold text-sm text-[#f97316] mt-0.5">{line.som}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+          {/* Chord Translations */}
+          {data.chordTranslations && data.chordTranslations.length > 0 && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3">
+              <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord Translations</p>
+              <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                {data.chordTranslations.map((ct: ChordTranslation, i: number) => (
+                  <div key={i} className="flex items-center gap-1.5 text-xs">
+                    <span className="font-mono font-semibold text-[#f97316] min-w-[28px]">{ct.original}</span>
+                    <span className="text-[#475569] text-[10px]">\u2192</span>
+                    <span className={"font-mono font-bold min-w-[28px] " + (ct.specialCase ? "text-[#eab308]" : "text-[#06b6d4]")}>{ct.converted}</span>
+                    {ct.specialCase && <span className="text-[8px] text-[#eab308]">\u26a0</span>}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
+
+          {/* Conversion Confidence */}
+          {data.conversionConfidence != null && (
+            <div className="bg-[#22c55e]/8 border border-[#22c55e]/15 rounded-lg p-3">
+              <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-1">Conversion Confidence</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-extrabold text-[#22c55e]">{data.conversionConfidence?.overall ?? 0}%</span>
+                <span className="text-[10px] text-[#64748b]">{(data.conversionConfidence?.overall ?? 0) >= 95 ? 'High Accuracy' : (data.conversionConfidence?.overall ?? 0) >= 80 ? 'Good' : 'Review Needed'}</span>
+              </div>
+              <div className="mt-2 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#22c55e] to-[#06b6d4]" style={{ width: (data.conversionConfidence?.overall ?? 0) + '%' }} />
+              </div>
+              {data.conversionConfidence?.ambiguousCount != null && data.conversionConfidence.ambiguousCount > 0 && (
+                <p className="text-[9px] text-[#eab308] mt-1.5">{data.conversionConfidence.ambiguousCount} ambiguous chord{data.conversionConfidence.ambiguousCount > 1 ? 's' : ''} detected</p>
+              )}
+              {data.conversionConfidence?.totalChords != null && (
+                <p className="text-[9px] text-[#64748b] mt-0.5">{data.conversionConfidence.resolvedChords ?? data.conversionConfidence.totalChords}/{data.conversionConfidence.totalChords} chords resolved</p>
+              )}
+            </div>
+          )}
+
+          {/* Special Cases / Warnings */}
+          {data.specialCases && data.specialCases.length > 0 && (
+            <div className="bg-[#eab308]/8 border border-[#eab308]/15 rounded-lg p-3">
+              <p className="text-[10px] font-semibold text-[#eab308] uppercase tracking-wider mb-2">Special Cases</p>
+              <div className="space-y-1.5">
+                {data.specialCases.map((sc: string, i: number) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <span className="text-[#eab308] text-[10px] mt-0.5">\u26a0</span>
+                    <p className="text-[10px] text-[#94a3b8] leading-tight">{sc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Assumptions */}
+          {data.assumptions && data.assumptions.length > 0 && (
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-lg p-3">
+              <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions Made</p>
+              <div className="space-y-1">
+                {data.assumptions.map((a: string, i: number) => (
+                  <p key={i} className="text-[10px] text-[#475569] leading-tight">\u2022 {a}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Validation Status */}
+          {data._validation && (
+            <div className={"border rounded-lg p-2 " + (data._validation.valid ? "bg-[#22c55e]/5 border-[#22c55e]/15" : "bg-[#ef4444]/5 border-[#ef4444]/15")}>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px]">{data._validation.valid ? '\u2705' : '\u26a0\ufe0f'}</span>
+                <p className={"text-[9px] font-semibold " + (data._validation.valid ? "text-[#22c55e]" : "text-[#ef4444]")}>{data._validation.valid ? 'All checks passed' : data._validation.warnings.length + ' warning(s)'}</p>
+              </div>
+            </div>
+          )}
         </div>
-      ))}
     </div>
   );
 }
 
-/* ── Old-format result renderer (for manual text conversion) ── */
+/* ââ Old-format result renderer (for manual text conversion) ââ */
 function OldResultView({ result, originalPreview }: { result: OldConversionResult; originalPreview: boolean }) {
   return (
     <div className="space-y-4">
@@ -290,10 +573,10 @@ function OldResultView({ result, originalPreview }: { result: OldConversionResul
                   {line.motesartChords && line.motesartChords.length > 0 && (
                     <div className="flex flex-wrap gap-4 px-2 py-1.5 bg-[#1e293b]/30 rounded">
                       {line.motesartChords.map((chord, ci) => {
-                        const numberMatch = chord.symbol.match(/^(\d½?)/);
+                        const numberMatch = chord.symbol.match(/^(\dÂ½?)/);
                         const num = numberMatch?.[1] || '';
                         const rest = chord.symbol.slice(num.length);
-                        const isHalf = num.includes('½');
+                        const isHalf = num.includes('Â½');
                         const baseNum = parseInt(num[0]) || 1;
                         const colors: Record<number, string> = {
                           1: '#06b6d4', 2: '#6366f1', 3: '#a855f7',
@@ -338,9 +621,9 @@ function OldResultView({ result, originalPreview }: { result: OldConversionResul
   );
 }
 
-/* ══════════════════════════════════════════════════════
+/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
    MAIN DASHBOARD
-   ══════════════════════════════════════════════════════ */
+   ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
 export default function Dashboard() {
   const [originalPreview, setOriginalPreview] = useState(false);
   const [chatInput, setChatInput] = useState('');
@@ -390,7 +673,7 @@ export default function Dashboard() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  /* ── Convert / Process ── */
+  /* ââ Convert / Process ââ */
   const handleConvert = useCallback(async () => {
     setIsProcessing(true);
     try {
@@ -463,7 +746,7 @@ export default function Dashboard() {
           const isTimeout = fetchErr instanceof Error && fetchErr.name === 'AbortError';
           setUploadedFiles(prev => prev.map(f =>
             f.name === fileToProcess.name
-              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out — try again or use a smaller file' : 'Network error — check your connection' }
+              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out â try again or use a smaller file' : 'Network error â check your connection' }
               : f
           ));
         }
@@ -475,16 +758,16 @@ export default function Dashboard() {
     }
   }, [mode, manualInput, selectedKey, uploadedFiles]);
 
-  /* ── Build plain-text content for CSV/TEXT exports ── */
+  /* ââ Build plain-text content for CSV/TEXT exports ââ */
   const buildTextContent = (): string => {
     if (!activeResult) return '';
     let content = '';
     if (isSomTeachingEdition(activeResult)) {
       const d = activeResult;
-      content += `${d.title} — ${d.subtitle}\n`;
-      content += `Keys: ${d.metadata.keys.join(' → ')}  Meter: ${d.metadata.meter}  Tempo: ${d.metadata.tempo}  Artist: ${d.metadata.artist}\n\n`;
+      content += `${d.title} â ${d.subtitle}\n`;
+      content += `Keys: ${d.metadata.keys.join(' â ')}  Meter: ${d.metadata.meter}  Tempo: ${d.metadata.tempo}  Artist: ${d.metadata.artist}\n\n`;
       d.sections.forEach(sec => {
-        content += `${sec.name} — Key: 1 = ${sec.key}\n`;
+        content += `${sec.name} â Key: 1 = ${sec.key}\n`;
         content += `Scale: ${sec.scaleReference}\n\n`;
         sec.subsections.forEach(sub => {
           content += `  ${sub.name}\n`;
@@ -511,7 +794,7 @@ export default function Dashboard() {
     return content;
   };
 
-  /* ── Build styled HTML for PDF export ── */
+  /* ââ Build styled HTML for PDF export ââ */
   const buildStyledPdfHtml = (logoDataUrl: string): string => {
     if (!activeResult || !isSomTeachingEdition(activeResult)) return '';
     const d = activeResult;
@@ -595,7 +878,7 @@ export default function Dashboard() {
     </div>`;
   };
 
-  /* ── Helper: load logo as base64 data URL via same-origin proxy ── */
+  /* ââ Helper: load logo as base64 data URL via same-origin proxy ââ */
   const loadLogoBase64 = async (): Promise<string> => {
     try {
       const res = await fetch('/api/logo');
@@ -613,7 +896,7 @@ export default function Dashboard() {
     }
   };
 
-  /* ── Export ── */
+  /* ââ Export ââ */
   const handleExport = async (format: 'pdf' | 'csv' | 'text') => {
     if (!activeResult) return;
 
@@ -673,7 +956,7 @@ export default function Dashboard() {
     }
   };
 
-  /* ── Chat ── */
+  /* ââ Chat ââ */
   const handleChatSend = async () => {
     if (!chatInput.trim() || isChatLoading) return;
     const userMessage = { role: 'user', text: chatInput };
@@ -716,10 +999,10 @@ export default function Dashboard() {
 
   const KEYS = ['Auto-detect','C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
 
-  /* ── Determine key display ── */
+  /* ââ Determine key display ââ */
   const keyDisplay = activeResult
     ? isSomTeachingEdition(activeResult)
-      ? activeResult.metadata?.keys?.join(' → ')
+      ? activeResult.metadata?.keys?.join(' â ')
       : activeResult.key?.tonic
     : null;
 
@@ -867,8 +1150,8 @@ export default function Dashboard() {
               </div>
               <div className="pt-3 border-t border-[#1e293b]">
                 <p className="text-xs text-[#64748b] mb-2">Chromatic reference</p>
-                <p className="text-xs font-mono text-[#f97316]">1½ 2½ 4½ 5½ 6½</p>
-                <p className="text-xs text-[#64748b] mt-1">No 3½ or 7½</p>
+                <p className="text-xs font-mono text-[#f97316]">1Â½ 2Â½ 4Â½ 5Â½ 6Â½</p>
+                <p className="text-xs text-[#64748b] mt-1">No 3Â½ or 7Â½</p>
               </div>
             </div>
           </div>
