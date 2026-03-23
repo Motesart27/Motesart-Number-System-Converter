@@ -222,9 +222,9 @@ function SomLegendCard() {
 }
 
 /* ââ SOM Teaching Edition Renderer ââ */
-function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
+function SomTeachingEditionView({ data, converterMode, setConverterMode }: { data: SomTeachingEdition; converterMode: 'quick' | 'curriculum' | 'compliance'; setConverterMode: (m: 'quick' | 'curriculum' | 'compliance') => void }) {
   const [viewMode, setViewMode] = useState<'original' | 'numbers' | 'side-by-side'>('side-by-side');
-  const [converterMode, setConverterMode] = useState<'quick' | 'curriculum' | 'compliance'>('quick');
+
   const [showExplanation, setShowExplanation] = useState(false);
 
   /* Helper: render a single section's lines */
@@ -1211,7 +1211,7 @@ export default function Dashboard() {
                     <p className="text-xs text-[#64748b] mb-3">Source: {activeFileName}</p>
                   )}
                   {isSomTeachingEdition(activeResult) ? (
-                    <SomTeachingEditionView data={activeResult} />
+                    <SomTeachingEditionView data={activeResult} converterMode={converterMode} setConverterMode={setConverterMode} />
                   ) : (
                     <OldResultView result={activeResult as OldConversionResult} originalPreview={originalPreview} />
                   )}
@@ -1225,6 +1225,17 @@ export default function Dashboard() {
                       ? 'Upload sheet music and click Process to extract and convert using Gemini AI.'
                       : 'Switch to Manual Entry mode and paste a chord chart to convert.'}
                   </p>
+              {/* CONVERTER MODE SELECTOR */}
+              <div className="flex gap-1.5 mb-4">
+                {(['quick', 'curriculum', 'compliance'] as const).map(m => (
+                  <button key={m} onClick={() => setConverterMode(m)}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${converterMode === m
+                      ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg shadow-indigo-500/20'
+                      : 'bg-white/[0.03] text-[#475569] border border-white/[0.06] hover:bg-white/[0.06]'}`}>
+                    {m === 'quick' ? 'Quick' : m === 'curriculum' ? 'Curriculum' : 'Compliance'}
+                  </button>
+                ))}
+              </div>
                   {mode === 'upload' && (
                     <div className="flex flex-col items-center gap-2">
                       <button
