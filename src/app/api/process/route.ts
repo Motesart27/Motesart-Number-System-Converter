@@ -208,7 +208,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[process] Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
+    // Parse converter mode (default: quick)
+    const mode = (formData.get('mode') as string) || 'quick';
+    const validModes = ['quick', 'curriculum', 'compliance'];
+    const converterMode = validModes.includes(mode) ? mode : 'quick';
+
+    console.log(`[process] Processing file: ${file.name}, type: ${file.type}, size: ${file.size}, mode: ${converterMode}`);
 
     // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
@@ -233,6 +238,31 @@ export async function POST(request: NextRequest) {
 
     const prompt = SOM_CONVERSION_PROMPT;
 
+    // Mode-specific prompt extensions
+    const CURRICULUM_EXTENSION = `
+Additionally, for this Curriculum Convert edition, please also include in your JSON response:
+- "conceptsExercised": an array of concept IDs this piece exercises. Use these canonical IDs where applicable: T_HALF_STEP, T_WHOLE_STEP, T_MAJOR_SCALE_PATTERN, T_SCALE_DEGREES_MAJOR, T_MAJOR_3RD, T_KEYBOARD_LAYOUT, T_CHORD_TRIAD_STRUCTURE, T_CHORD_QUALITY, T_KEY_SIGNATURE_READING, T_INTERVAL_RECOGNITION
+- "suggestedPhase": which learning phase this piece best fits (PHASE_1_FOUNDATIONS, PHASE_2_PATTERNS, PHASE_3_INTERVALS, PHASE_4_KEYS, PHASE_5_HARMONY, PHASE_6_NOTATION)
+- "teachingNotes": 2-3 sentences of educator-facing guidance on how to use this piece in a Motesart lesson
+- "toolSuggestions": array of teaching tool names that match the concepts (e.g., "numbered_keyboard", "scale_pattern_overlay", "half_step_demo", "interval_demo", "finger_map_numbered")
+`;
+
+    const COMPLIANCE_EXTENSION = `
+Additionally, for this Compliance Convert edition, please also include in your JSON response:
+- "conceptsExercised": an array of concept IDs this piece exercises (same as curriculum mode)
+- "suggestedPhase": which learning phase this piece best fits
+- "gradeBandAlignment": which grade bands this piece is appropriate for (e.g., "K-2", "1-3", "2-5", "3-8")
+- "standardsEvidence": a 1-2 sentence school-facing evidence statement suitable for compliance reporting
+- "complianceNotes": educator/admin-facing notes about curriculum alignment
+- "teachingNotes": 2-3 sentences of educator-facing guidance
+- "toolSuggestions": array of teaching tool names
+`;
+
+    const modePromptExtension = converterMode === 'curriculum' ? CURRICULUM_EXTENSION
+      : converterMode === 'compliance' ? COMPLIANCE_EXTENSION
+      : '';
+    const fullPrompt = prompt + modePromptExtension;
+
     // Call Gemini API with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
@@ -255,7 +285,7 @@ export async function POST(request: NextRequest) {
                   }
                 },
                 {
-                  text: prompt
+                  text: fullPrompt
                 }
               ]
             }],
@@ -389,6 +419,7 @@ export async function POST(request: NextRequest) {
         warnings: validation.warnings,
         checkedAt: new Date().toISOString(),
       },
+      _converterMode: converterMode,
     });
   } catch (error) {
     console.error('Process error:', error);
