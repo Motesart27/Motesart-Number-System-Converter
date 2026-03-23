@@ -371,7 +371,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
           <div className="bg-[#6366f1]/8 border border-[#6366f1]/15 rounded-lg p-3">
             <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-1">Key Detected</p>
             <p className="text-lg font-extrabold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'} Major</p>
-            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + (data.metadata?.keys || []).join(' \u2192 ') : 'No key changes'}</p>
+            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + (data.metadata?.keys || []).join(' → ') : 'No key changes'}</p>
           </div>
 
           {/* Number System Home + Scale Map */}
@@ -395,9 +395,9 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 {(data.chordTranslations || []).map((ct: ChordTranslation, i: number) => (
                   <div key={i} className="flex items-center gap-1.5 text-xs">
                     <span className="font-mono font-semibold text-[#f97316] min-w-[28px]">{ct.original}</span>
-                    <span className="text-[#475569] text-[10px]">\u2192</span>
+                    <span className="text-[#475569] text-[10px]">→</span>
                     <span className={"font-mono font-bold min-w-[28px] " + (ct.specialCase ? "text-[#eab308]" : "text-[#06b6d4]")}>{ct.converted}</span>
-                    {ct.specialCase && <span className="text-[8px] text-[#eab308]">\u26a0</span>}
+                    {ct.specialCase && <span className="text-[8px] text-[#eab308]">⚠</span>}
                   </div>
                 ))}
               </div>
@@ -431,7 +431,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               <div className="space-y-1.5">
                 {(data.specialCases || []).map((sc: string, i: number) => (
                   <div key={i} className="flex items-start gap-1.5">
-                    <span className="text-[#eab308] text-[10px] mt-0.5">\u26a0</span>
+                    <span className="text-[#eab308] text-[10px] mt-0.5">⚠</span>
                     <p className="text-[10px] text-[#94a3b8] leading-tight">{sc}</p>
                   </div>
                 ))}
@@ -445,7 +445,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
               <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions Made</p>
               <div className="space-y-1">
                 {(data.assumptions || []).map((a: string, i: number) => (
-                  <p key={i} className="text-[10px] text-[#475569] leading-tight">\u2022 {a}</p>
+                  <p key={i} className="text-[10px] text-[#475569] leading-tight">• {a}</p>
                 ))}
               </div>
             </div>
@@ -455,7 +455,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
           {data._validation && (
             <div className={"border rounded-lg p-2 " + (data._validation.valid ? "bg-[#22c55e]/5 border-[#22c55e]/15" : "bg-[#ef4444]/5 border-[#ef4444]/15")}>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px]">{data._validation.valid ? '\u2705' : '\u26a0\ufe0f'}</span>
+                <span className="text-[10px]">{data._validation.valid ? '✅' : '⚠️'}</span>
                 <p className={"text-[9px] font-semibold " + (data._validation.valid ? "text-[#22c55e]" : "text-[#ef4444]")}>{data._validation.valid ? 'All checks passed' : data._validation.warnings.length + ' warning(s)'}</p>
               </div>
             </div>
@@ -469,10 +469,10 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
           className="w-full flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:bg-white/[0.05] transition-all"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm">\ud83d\udd0d</span>
+            <span className="text-sm">🔍</span>
             <span className="text-xs font-semibold text-white">How we converted this</span>
           </div>
-          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>\u25bc</span>
+          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>▼</span>
         </button>
         {showExplanation && (
           <div className="mt-2 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 space-y-4">
@@ -501,10 +501,10 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                   {(data.chordTranslations || []).map((ct: ChordTranslation, i: number) => (
                     <div key={i} className={"flex items-center gap-2 text-xs px-2 py-1.5 rounded " + (ct.specialCase ? "bg-[#eab308]/8 border border-[#eab308]/15" : "bg-white/[0.02]")}>
                       <span className="font-mono font-bold text-[#f97316] w-[36px]">{ct.original}</span>
-                      <span className="text-[#475569]">\u2192</span>
+                      <span className="text-[#475569]">→</span>
                       <span className="font-mono font-bold text-[#06b6d4] w-[36px]">{ct.converted}</span>
                       <span className="text-[10px] text-[#64748b] flex-1 truncate">{ct.reason}</span>
-                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">\u26a0</span>}
+                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">⚠</span>}
                     </div>
                   ))}
                 </div>
@@ -517,7 +517,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions & Simplifications</p>
                 <div className="space-y-1">
                   {(data.assumptions || []).map((a: string, i: number) => (
-                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">\u2022 {a}</p>
+                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">• {a}</p>
                   ))}
                 </div>
               </div>
@@ -530,7 +530,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 <div className="space-y-1">
                   {(data._validation?.warnings || []).map((w: {type: string; message: string}, i: number) => (
                     <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                      <span className="text-[#ef4444] mt-0.5">\u26a0</span>
+                      <span className="text-[#ef4444] mt-0.5">⚠</span>
                       <span className="text-[#94a3b8]">{w.message}</span>
                     </div>
                   ))}
@@ -544,7 +544,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
                 <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-2">Confidence Factors</p>
                 <div className="space-y-1">
                   {(data.conversionConfidence?.reasons || []).map((r: string, i: number) => (
-                    <p key={i} className="text-[10px] text-[#94a3b8]">\u2022 {r}</p>
+                    <p key={i} className="text-[10px] text-[#94a3b8]">• {r}</p>
                   ))}
                 </div>
               </div>
