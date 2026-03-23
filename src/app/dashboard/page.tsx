@@ -1,94 +1,3 @@
-
-      {/* HOW WE CONVERTED THIS — Collapsible Drawer */}
-      <div className="mt-4">
-        <button
-          onClick={() => setShowExplanation(!showExplanation)}
-          className="w-full flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:bg-white/[0.05] transition-all"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-sm">\ud83d\udd0d</span>
-            <span className="text-xs font-semibold text-white">How we converted this</span>
-          </div>
-          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>\u25bc</span>
-        </button>
-        {showExplanation && (
-          <div className="mt-2 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 space-y-4">
-            {/* Detected Key & Scale */}
-            <div>
-              <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Key Detection</p>
-              <p className="text-xs text-[#94a3b8]">Detected key: <span className="font-bold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'}</span></p>
-              {data.homeNumber && <p className="text-xs text-[#94a3b8] mt-1">Home number: <span className="font-bold text-[#06b6d4]">{data.homeNumber}</span></p>}
-              {data.scaleMap && data.scaleMap.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-[10px] text-[#64748b] mb-1">Scale degree map:</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {data.scaleMap.map((m: string, i: number) => (
-                      <span key={i} className="font-mono text-xs bg-[#6366f1]/10 text-[#a5b4fc] px-2 py-0.5 rounded">{m}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Each Chord Mapping */}
-            {data.chordTranslations && data.chordTranslations.length > 0 && (
-              <div>
-                <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord-by-Chord Mapping</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {data.chordTranslations.map((ct: ChordTranslation, i: number) => (
-                    <div key={i} className={"flex items-center gap-2 text-xs px-2 py-1.5 rounded " + (ct.specialCase ? "bg-[#eab308]/8 border border-[#eab308]/15" : "bg-white/[0.02]")}>
-                      <span className="font-mono font-bold text-[#f97316] w-[36px]">{ct.original}</span>
-                      <span className="text-[#475569]">\u2192</span>
-                      <span className="font-mono font-bold text-[#06b6d4] w-[36px]">{ct.converted}</span>
-                      <span className="text-[10px] text-[#64748b] flex-1 truncate">{ct.reason}</span>
-                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">\u26a0</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Assumptions & Simplifications */}
-            {data.assumptions && data.assumptions.length > 0 && (
-              <div>
-                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions & Simplifications</p>
-                <div className="space-y-1">
-                  {data.assumptions.map((a: string, i: number) => (
-                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">\u2022 {a}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Validation Details */}
-            {data._validation && !data._validation.valid && (
-              <div>
-                <p className="text-[10px] font-semibold text-[#ef4444] uppercase tracking-wider mb-2">Validation Warnings</p>
-                <div className="space-y-1">
-                  {data._validation.warnings.map((w: {type: string; message: string}, i: number) => (
-                    <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                      <span className="text-[#ef4444] mt-0.5">\u26a0</span>
-                      <span className="text-[#94a3b8]">{w.message}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Confidence Reasons */}
-            {data.conversionConfidence?.reasons && data.conversionConfidence.reasons.length > 0 && (
-              <div>
-                <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-2">Confidence Factors</p>
-                <div className="space-y-1">
-                  {data.conversionConfidence.reasons.map((r: string, i: number) => (
-                    <p key={i} className="text-[10px] text-[#94a3b8]">\u2022 {r}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
@@ -552,6 +461,97 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
             </div>
           )}
         </div>
+    </div>
+      {/* HOW WE CONVERTED THIS — Collapsible Drawer */}
+      <div className="mt-4">
+        <button
+          onClick={() => setShowExplanation(!showExplanation)}
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:bg-white/[0.05] transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm">\ud83d\udd0d</span>
+            <span className="text-xs font-semibold text-white">How we converted this</span>
+          </div>
+          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>\u25bc</span>
+        </button>
+        {showExplanation && (
+          <div className="mt-2 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 space-y-4">
+            {/* Detected Key & Scale */}
+            <div>
+              <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Key Detection</p>
+              <p className="text-xs text-[#94a3b8]">Detected key: <span className="font-bold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'}</span></p>
+              {data.homeNumber && <p className="text-xs text-[#94a3b8] mt-1">Home number: <span className="font-bold text-[#06b6d4]">{data.homeNumber}</span></p>}
+              {data.scaleMap && data.scaleMap.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[10px] text-[#64748b] mb-1">Scale degree map:</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {data.scaleMap.map((m: string, i: number) => (
+                      <span key={i} className="font-mono text-xs bg-[#6366f1]/10 text-[#a5b4fc] px-2 py-0.5 rounded">{m}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Each Chord Mapping */}
+            {data.chordTranslations && data.chordTranslations.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord-by-Chord Mapping</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {data.chordTranslations.map((ct: ChordTranslation, i: number) => (
+                    <div key={i} className={"flex items-center gap-2 text-xs px-2 py-1.5 rounded " + (ct.specialCase ? "bg-[#eab308]/8 border border-[#eab308]/15" : "bg-white/[0.02]")}>
+                      <span className="font-mono font-bold text-[#f97316] w-[36px]">{ct.original}</span>
+                      <span className="text-[#475569]">\u2192</span>
+                      <span className="font-mono font-bold text-[#06b6d4] w-[36px]">{ct.converted}</span>
+                      <span className="text-[10px] text-[#64748b] flex-1 truncate">{ct.reason}</span>
+                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">\u26a0</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assumptions */}
+            {data.assumptions && data.assumptions.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions & Simplifications</p>
+                <div className="space-y-1">
+                  {data.assumptions.map((a: string, i: number) => (
+                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">\u2022 {a}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Validation Details */}
+            {data._validation && !data._validation.valid && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#ef4444] uppercase tracking-wider mb-2">Validation Warnings</p>
+                <div className="space-y-1">
+                  {data._validation.warnings.map((w: {type: string; message: string}, i: number) => (
+                    <div key={i} className="flex items-start gap-1.5 text-[10px]">
+                      <span className="text-[#ef4444] mt-0.5">\u26a0</span>
+                      <span className="text-[#94a3b8]">{w.message}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Confidence Reasons */}
+            {data.conversionConfidence?.reasons && data.conversionConfidence.reasons.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-2">Confidence Factors</p>
+                <div className="space-y-1">
+                  {data.conversionConfidence.reasons.map((r: string, i: number) => (
+                    <p key={i} className="text-[10px] text-[#94a3b8]">\u2022 {r}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
