@@ -168,8 +168,8 @@ function SomLegendCard() {
 
           <div>
             <p className="text-[#94a3b8] font-semibold mb-1">Chromatic Half-Numbers</p>
-            <p className="font-mono text-[#f97316]">1Â½ &nbsp; 2Â½ &nbsp; 4Â½ &nbsp; 5Â½ &nbsp; 6Â½</p>
-            <p className="text-[#64748b] mt-0.5">No 3Â½ or 7Â½ (E-F and B-C are natural half steps)</p>
+            <p className="font-mono text-[#f97316]">1½ &nbsp; 2½ &nbsp; 4½ &nbsp; 5½ &nbsp; 6½</p>
+            <p className="text-[#64748b] mt-0.5">No 3½ or 7½ (E-F and B-C are natural half steps)</p>
           </div>
 
           <div>
@@ -573,10 +573,10 @@ function OldResultView({ result, originalPreview }: { result: OldConversionResul
                   {line.motesartChords && line.motesartChords.length > 0 && (
                     <div className="flex flex-wrap gap-4 px-2 py-1.5 bg-[#1e293b]/30 rounded">
                       {line.motesartChords.map((chord, ci) => {
-                        const numberMatch = chord.symbol.match(/^(\dÂ½?)/);
+                        const numberMatch = chord.symbol.match(/^(\d½?)/);
                         const num = numberMatch?.[1] || '';
                         const rest = chord.symbol.slice(num.length);
-                        const isHalf = num.includes('Â½');
+                        const isHalf = num.includes('½');
                         const baseNum = parseInt(num[0]) || 1;
                         const colors: Record<number, string> = {
                           1: '#06b6d4', 2: '#6366f1', 3: '#a855f7',
@@ -1150,8 +1150,8 @@ export default function Dashboard() {
               </div>
               <div className="pt-3 border-t border-[#1e293b]">
                 <p className="text-xs text-[#64748b] mb-2">Chromatic reference</p>
-                <p className="text-xs font-mono text-[#f97316]">1Â½ 2Â½ 4Â½ 5Â½ 6Â½</p>
-                <p className="text-xs text-[#64748b] mt-1">No 3Â½ or 7Â½</p>
+                <p className="text-xs font-mono text-[#f97316]">1½ 2½ 4½ 5½ 6½</p>
+                <p className="text-xs text-[#64748b] mt-1">No 3½ or 7½</p>
               </div>
             </div>
           </div>
