@@ -8,12 +8,12 @@ const SOM_CONVERSION_PROMPT = `You are a Motesart Number System (SOM) expert con
 
 ## THE MOTESART NUMBER SYSTEM RULES
 - Numbers 1-7 = major scale degrees: 1(do) 2(re) 3(mi) 4(fa) 5(sol) 6(la) 7(ti)
-- Half-numbers for chromatic tones: 1½, 2½, 4½, 5½, 6½ (NEVER 3½ or 7½)
+- Half-numbers for chromatic tones: 1Â½, 2Â½, 4Â½, 5Â½, 6Â½ (NEVER 3Â½ or 7Â½)
 - "1 = C" means C is the tonic: C=1, D=2, E=3, F=4, G=5, A=6, B=7
 - Minor chords: marked with "m" (e.g., 6m for Am in key of C)
 - Major on non-diatonic degree: marked with "M" (e.g., 2M for D major in key of C)
 - Diatonic major chords (1, 4, 5): NO modifier needed
-- Diminished: ° (e.g., 7° or 2°)
+- Diminished: Â° (e.g., 7Â° or 2Â°)
 - Augmented: + (e.g., 5+)
 - Extensions: superscript notation 7, 9, 11, 13
 - Slash/Inversion chords: bass/chord format. G/B in key of C = 3/5 (bass note first)
@@ -32,6 +32,13 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
     "tempo": 120,
     "artist": "Artist Name"
   },
+  "chordTranslations": [
+    { "original": "F", "som": "1", "rule": "tonic / I chord" },
+    { "original": "Bb", "som": "4", "rule": "subdominant / IV chord" },
+    { "original": "C", "som": "5", "rule": "dominant / V chord" }
+  ],
+  "conversionConfidence": 95,
+  "specialCases": [],
   "sections": [
     {
       "name": "SECTION A",
@@ -64,44 +71,49 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
   ]
 }
 
+## ADDITIONAL OUTPUT FIELDS
+- "chordTranslations": An array of ALL unique chords found in the piece. Each entry has "original" (letter chord), "som" (number system equivalent), and "rule" (brief explanation like "tonic / I chord", "subdominant / IV", "dominant / V", "relative minor / vi", "secondary dominant", "borrowed chord from parallel minor", etc.)
+- "conversionConfidence": A number 0-100 representing how confident you are in the conversion accuracy. 95-100 = all chords clearly diatonic, no ambiguity. 80-94 = mostly clear with minor ambiguities. Below 80 = significant uncertainty.
+- "specialCases": An array of strings noting any conversion edge cases. Examples: "G7 treated as dominant 7th (V7/IV) leading to C", "Slash chord F/C simplified to 1", "Key modulation detected at measure 12", "Ambiguous chord: Dm7 could be ii7 or vi7 depending on context". Leave empty array [] if no special cases.
+
 ## LINE TYPES
 - "chords": A chord progression line. Include "original" (letter chords), "som" (number conversion), and optionally "lyrics"
 - "notes": Individual note sequences (instrumental/melody). Include "label", "original", and "som"
 - "nc": No chord section. Just lyrics with N.C. marking
 - "break": An instrumental break or transition with optional "label"
 
-## CHORD-LYRIC ALIGNMENT (CRITICAL — FOLLOW EXACTLY)
+## CHORD-LYRIC ALIGNMENT (CRITICAL â FOLLOW EXACTLY)
 In the original sheet music, chord symbols (like F, Bb, C) appear ABOVE specific words/syllables. You MUST preserve this exact positioning when converting to SOM numbers.
 
 STEP-BY-STEP PROCESS for each chord line with lyrics:
-1. Look at the original sheet music — note EXACTLY which word or syllable each chord sits above.
+1. Look at the original sheet music â note EXACTLY which word or syllable each chord sits above.
 2. Write out the "lyrics" string first.
 3. For the "som" string, place each SOM number at the EXACT same character index as the first letter of the word/syllable it belongs to in the lyrics string.
 4. Fill all other positions with space characters.
 5. The "som" and "lyrics" strings MUST be the same length (or som can be shorter if the last chord is before the last word).
 
-EXAMPLE — Original has: F over "I", Bb over "tell", C over "Je-", F over "soul":
+EXAMPLE â Original has: F over "I", Bb over "tell", C over "Je-", F over "soul":
   "som":    "1              4        5           1"
   "lyrics": "I love to tell how Je - sus saved my soul"
-  (F→1 at index 0, Bb→4 at index 15, C→5 at index 24, F→1 at index 36)
+  (Fâ1 at index 0, Bbâ4 at index 15, Câ5 at index 24, Fâ1 at index 36)
 
-EXAMPLE — Original has: F over "Amazing", Bb over "sweet":
+EXAMPLE â Original has: F over "Amazing", Bb over "sweet":
   "som":    "1               4"
   "lyrics": "Amazing grace how sweet the sound"
-  (F→1 at index 0, Bb→4 at index 18)
+  (Fâ1 at index 0, Bbâ4 at index 18)
 
-EXAMPLE — Original has: Bb over "You", F over "and", C over "mercy", Dm over "Hallelujah":
+EXAMPLE â Original has: Bb over "You", F over "and", C over "mercy", Dm over "Hallelujah":
   "som":    "4               1              5                      6m"
   "lyrics": "You are good and Your mercy is forever Hallelujah"
-  (Bb→4 at index 0, F→1 at index 16, C→5 at index 31, Dm→6m at index 53)
+  (Bbâ4 at index 0, Fâ1 at index 16, Câ5 at index 31, Dmâ6m at index 53)
 
 VERIFY: After generating each pair, mentally count characters to confirm each SOM number starts at the same position as its corresponding word in the lyrics. If they don't align, fix the spacing before outputting.
 
 ## CRITICAL RULES
 1. The scaleReference line shows number-to-letter mapping: "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)"
-2. In chord/note lines ("som" field), use NUMBERS ONLY — do NOT repeat the letter names. The scale reference already tells the user what each number means. Example: "1 4 5 4" NOT "1(F) 4(Bb) 5(C) 4(Bb)"
-3. For slash chords in som lines: bass/chord — e.g., "3/1" NOT "3/1(F/A)"
-4. For quality modifiers: "6m" "2M" "7°" "5+" — numbers only, no letters
+2. In chord/note lines ("som" field), use NUMBERS ONLY â do NOT repeat the letter names. The scale reference already tells the user what each number means. Example: "1 4 5 4" NOT "1(F) 4(Bb) 5(C) 4(Bb)"
+3. For slash chords in som lines: bass/chord â e.g., "3/1" NOT "3/1(F/A)"
+4. For quality modifiers: "6m" "2M" "7Â°" "5+" â numbers only, no letters
 5. Detect ALL key changes and create a new section for each key
 6. Include the full scale reference (with letters) for each key section
 7. Extract title, artist, tempo, meter if visible in the document
@@ -109,7 +121,7 @@ VERIFY: After generating each pair, mentally count characters to confirm each SO
 9. Handle N.C. (No Chord) sections properly
 10. For note sequences use dashes: "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
 11. Output ONLY valid JSON. No explanations, no markdown fences.
-12. ALWAYS space-align "som" with "lyrics" — each chord number must start at the EXACT character index of the word/syllable it belongs to. Look at where the chord symbols appear in the original sheet music above the lyrics and replicate that positioning exactly. This is the #1 most important formatting rule.`;
+12. ALWAYS space-align "som" with "lyrics" â each chord number must start at the EXACT character index of the word/syllable it belongs to. Look at where the chord symbols appear in the original sheet music above the lyrics and replicate that positioning exactly. This is the #1 most important formatting rule.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -191,7 +203,7 @@ export async function POST(request: NextRequest) {
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         console.error('[process] Gemini request timed out after 55s');
         return NextResponse.json(
-          { error: 'Processing timed out. The file may be too large — try a smaller PDF or image.' },
+          { error: 'Processing timed out. The file may be too large â try a smaller PDF or image.' },
           { status: 504 }
         );
       }
