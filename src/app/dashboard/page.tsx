@@ -1,5 +1,16 @@
 'use client';
 
+// Transition animation styles
+const fadeInStyles = `
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.som-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+.som-fade-in-delay { animation: fadeInUp 0.5s ease-out 0.15s forwards; opacity: 0; }
+.som-fade-in-delay-2 { animation: fadeInUp 0.5s ease-out 0.3s forwards; opacity: 0; }
+`;
+
 import { useState, useRef, useCallback } from 'react';
 import {
   Upload,
@@ -108,6 +119,14 @@ interface SomTeachingEdition {
   renderHints?: RenderHints;
   _validation?: ValidationResult;
   sections: SomSection[];
+  conceptsExercised?: string[];
+  suggestedPhase?: string;
+  teachingNotes?: string;
+  toolSuggestions?: string[];
+  gradeBandAlignment?: string;
+  standardsEvidence?: string;
+  complianceNotes?: string;
+  _converterMode?: string;
 }
 
 type ActiveResult = OldConversionResult | SomTeachingEdition;
@@ -132,6 +151,7 @@ function isSomTeachingEdition(r: ActiveResult): r is SomTeachingEdition {
 function SomLegendCard() {
   const [expanded, setExpanded] = useState(false);
   return (
+      <><style dangerouslySetInnerHTML={{ __html: fadeInStyles }} />
     <div className="bg-[#0f172a]/50 border border-[#1e293b] rounded-xl p-5">
       <button
         onClick={() => setExpanded(!expanded)}
@@ -211,7 +231,7 @@ function SomTeachingEditionView({ data }: { data: SomTeachingEdition }) {
       {lines.map((line, li) => {
         if (line.type === 'chords') {
           return (
-            <div key={li} className="px-3 py-1.5">
+            <div key={li} className="som-fade-in px-3 py-1.5">
               {showOriginal && line.original && (
                 <pre className="font-mono font-bold text-sm text-[#f97316] whitespace-pre leading-snug m-0">{line.original}</pre>
               )}
@@ -712,6 +732,7 @@ export default function Dashboard() {
 
         const formData = new FormData();
         formData.append('file', fileToProcess.file);
+      formData.append('mode', converterMode);
         if (selectedKey !== 'Auto-detect') formData.append('key', selectedKey);
 
         // Use AbortController for 65-second client-side timeout
@@ -1219,6 +1240,85 @@ export default function Dashboard() {
               )}
             </div>
 
+
+            {/* CURRICULUM & COMPLIANCE PANELS */}
+            {converterMode !== 'quick' && data && (
+              <div className="mt-4 space-y-3">
+                {/* Concepts Exercised */}
+                {(data.conceptsExercised || []).length > 0 && (
+                  <div className="bg-[#0f172a]/60 border border-[#6366f1]/20 rounded-xl p-4">
+                    <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Concepts Exercised</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(data.conceptsExercised || []).map((concept: string, i: number) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#6366f1]/15 text-[#818cf8] border border-[#6366f1]/20">
+                          {concept.replace('T_', '').replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested Phase */}
+                {data.suggestedPhase && (
+                  <div className="bg-[#0f172a]/60 border border-[#06b6d4]/20 rounded-xl p-4">
+                    <p className="text-[10px] font-semibold text-[#06b6d4] uppercase tracking-wider mb-1">Learning Phase</p>
+                    <p className="text-sm font-bold text-white">{data.suggestedPhase.replace('PHASE_', 'Phase ').replace(/_/g, ' ')}</p>
+                  </div>
+                )}
+
+                {/* Teaching Notes (Curriculum & Compliance) */}
+                {data.teachingNotes && (
+                  <div className="bg-[#0f172a]/60 border border-[#10b981]/20 rounded-xl p-4">
+                    <p className="text-[10px] font-semibold text-[#10b981] uppercase tracking-wider mb-1">Teaching Notes</p>
+                    <p className="text-xs text-[#94a3b8] leading-relaxed">{data.teachingNotes}</p>
+                  </div>
+                )}
+
+                {/* Tool Suggestions */}
+                {(data.toolSuggestions || []).length > 0 && (
+                  <div className="bg-[#0f172a]/60 border border-[#f59e0b]/20 rounded-xl p-4">
+                    <p className="text-[10px] font-semibold text-[#f59e0b] uppercase tracking-wider mb-2">Suggested Tools</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(data.toolSuggestions || []).map((tool: string, i: number) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#f59e0b]/10 text-[#fbbf24] border border-[#f59e0b]/20">
+                          {tool.replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* COMPLIANCE-ONLY PANELS */}
+                {converterMode === 'compliance' && (
+                  <>
+                    {/* Grade Band Alignment */}
+                    {data.gradeBandAlignment && (
+                      <div className="bg-[#0f172a]/60 border border-[#ec4899]/20 rounded-xl p-4">
+                        <p className="text-[10px] font-semibold text-[#ec4899] uppercase tracking-wider mb-1">Grade Band Alignment</p>
+                        <p className="text-lg font-extrabold text-white">{data.gradeBandAlignment}</p>
+                      </div>
+                    )}
+
+                    {/* Standards Evidence */}
+                    {data.standardsEvidence && (
+                      <div className="bg-[#0f172a]/60 border border-[#8b5cf6]/20 rounded-xl p-4">
+                        <p className="text-[10px] font-semibold text-[#8b5cf6] uppercase tracking-wider mb-1">Standards Evidence</p>
+                        <p className="text-xs text-[#94a3b8] leading-relaxed">{data.standardsEvidence}</p>
+                      </div>
+                    )}
+
+                    {/* Compliance Notes */}
+                    {data.complianceNotes && (
+                      <div className="bg-[#0f172a]/60 border border-[#ef4444]/20 rounded-xl p-4">
+                        <p className="text-[10px] font-semibold text-[#ef4444] uppercase tracking-wider mb-1">Compliance Notes</p>
+                        <p className="text-xs text-[#94a3b8] leading-relaxed">{data.complianceNotes}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             {/* AI Analysis & Chat Panel */}
             <div className="bg-[#0f172a]/50 border border-[#1e293b] rounded-xl p-5 flex flex-col">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#1e293b]">
@@ -1313,5 +1413,6 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
+  </>
   );
 }
