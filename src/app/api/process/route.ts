@@ -122,10 +122,18 @@ function validateConversion(result: Record<string, unknown>): { valid: boolean; 
   
   // Collect all unique original chords from sections
   const allOriginalChords = new Set<string>();
-  const sections = (result.sections as Array<{lines?: Array<{type: string; original?: string}>}>) || [];
+  const sections = (result.sections as Array<{subsections?: Array<{lines?: Array<{type: string; original?: string}>}>; lines?: Array<{type: string; original?: string}>}>) || [];
   for (const section of sections) {
-    if (!section.lines) continue;
-    for (const line of section.lines) {
+    // Walk subsections (SOM Teaching Edition structure) or direct lines (legacy)
+    const allLines: Array<{type: string; original?: string}> = [];
+    if (section.subsections) {
+      for (const sub of section.subsections) {
+        if (sub.lines) allLines.push(...sub.lines);
+      }
+    } else if (section.lines) {
+      allLines.push(...section.lines);
+    }
+    for (const line of allLines) {
       if (line.type === 'chords' && line.original) {
         const chords = (line.original as string).trim().split(/\s+/);
         for (const c of chords) {
@@ -402,6 +410,11 @@ Additionally, for this Compliance Convert edition, please also include in your J
       somResult.conversionConfidence = { overall: 85, totalChords: 0, resolvedChords: 0, ambiguousCount: 0, reasons: ['Default confidence — model did not return confidence data'] };
     }
     
+    if (!somResult.sections) somResult.sections = [];
+    if (!somResult.title) somResult.title = 'Untitled';
+    if (!somResult.subtitle) somResult.subtitle = 'SOM Teaching Edition';
+    if (!somResult.metadata) somResult.metadata = { keys: [], meter: '', tempo: 0, artist: '' };
+
     // Apply adjusted confidence if validator found issues
     if (validation.fixedConfidence !== undefined) {
       const conf = somResult.conversionConfidence as {overall: number; reasons: string[]};
