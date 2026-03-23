@@ -8,73 +8,56 @@ const SOM_CONVERSION_PROMPT = `You are a Motesart Number System (SOM) expert con
 
 ## THE MOTESART NUMBER SYSTEM RULES
 - Numbers 1-7 = major scale degrees: 1(do) 2(re) 3(mi) 4(fa) 5(sol) 6(la) 7(ti)
-- Half-numbers for chromatic tones: 1Â½, 2Â½, 4Â½, 5Â½, 6Â½ (NEVER 3Â½ or 7Â½)
+- Half-numbers for chromatic tones: 1½, 2½, 4½, 5½, 6½ (NEVER 3½ or 7½)
 - "1 = C" means C is the tonic: C=1, D=2, E=3, F=4, G=5, A=6, B=7
-- Minor chords: marked with "m" (e.g., 6m for Am in key of C)
-- Major on non-diatonic degree: marked with "M" (e.g., 2M for D major in key of C)
 - Diatonic major chords (1, 4, 5): NO modifier needed
-- Diminished: Â° (e.g., 7Â° or 2Â°)
-- Augmented: + (e.g., 5+)
-- Extensions: superscript notation 7, 9, 11, 13
-- Slash/Inversion chords: bass/chord format. G/B in key of C = 3/5 (bass note first)
-- N.C. = No Chord (keep as "N.C.")
-- Key changes: start a new section with the new key
+- Major on non-diatonic degree: "M" suffix (e.g., 2M for D major in key of C)
+- Minor chords: "m" suffix (e.g., 6m for Am in key of C)
+- Diminished: "dim" suffix (e.g., 7dim)
+- Augmented: "+" suffix (e.g., 5+)
+- Dominant 7th: "(7)" suffix (e.g., 5(7) for G7 in key of C)
+- Major 7th: "maj7" suffix (e.g., 1maj7, 4maj7)
+- Minor 7th: "m7" suffix (e.g., 2m7, 6m7)
+- Diminished 7th: "dim7" suffix (e.g., 7dim7)
+- Suspended 2nd: "sus2" suffix (e.g., 1sus2, 5sus2)
+- Suspended 4th: "sus4" suffix (e.g., 1sus4, 5sus4)
+- Add chords: "add9" suffix (e.g., 1add9)
+- Extensions 9/11/13: parenthetical (e.g., 5(9), 2m(11))
+- Slash/Inversion chords: chord/bass (e.g., 5/7 for G/B in key of C)
 
-## OUTPUT FORMAT
-You MUST output valid JSON matching this exact structure. No markdown, no code fences, ONLY the JSON object:
+## OFFICIAL CHORD SYNTAX REFERENCE (LOCKED)
+All converted chords MUST use ONLY the syntax above. Do not invent variations.
+Valid examples: 1, 4, 5, 2m, 3m, 6m, 5(7), 1maj7, 2m7, 7dim, 5+, 1sus4, 5/7, 4½
+Invalid examples: Imaj, IV, vi, V7, IΔ, ii7, bVII (do NOT use Roman numerals or jazz shorthand)
 
-{
-  "title": "Song Title",
-  "subtitle": "SOM Teaching Edition",
-  "metadata": {
-    "keys": ["F", "G"],
-    "meter": "4/4",
-    "tempo": 120,
-    "artist": "Artist Name"
-  },
-  "chordTranslations": [
-    { "original": "F", "som": "1", "rule": "tonic / I chord" },
-    { "original": "Bb", "som": "4", "rule": "subdominant / IV chord" },
-    { "original": "C", "som": "5", "rule": "dominant / V chord" }
-  ],
-  "conversionConfidence": 95,
-  "specialCases": [],
-  "sections": [
-    {
-      "name": "SECTION A",
-      "key": "F",
-      "scaleReference": "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)",
-      "subsections": [
-        {
-          "name": "Chorus 1",
-          "lines": [
-            {
-              "type": "chords",
-              "original": "F  Bb    C          Bb",
-              "som":      "1  4     5          4",
-              "lyrics":   "Eh eh eh eh My God is good oh"
-            },
-            {
-              "type": "notes",
-              "label": "Instrumental Line",
-              "original": "C-C-C C-C-C C-C-C-C D-Bb-D-E",
-              "som": "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
-            },
-            {
-              "type": "nc",
-              "lyrics": "Some lyric with no chord"
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+## SCALE MAP REFERENCE
+When you detect a key, build the full scale map. Example for Key of C:
+C=1, D=2, E=3, F=4, G=5, A=6, B=7
+Example for Key of G:
+G=1, A=2, B=3, C=4, D=5, E=6, F#=7
 
-## ADDITIONAL OUTPUT FIELDS
-- "chordTranslations": An array of ALL unique chords found in the piece. Each entry has "original" (letter chord), "som" (number system equivalent), and "rule" (brief explanation like "tonic / I chord", "subdominant / IV", "dominant / V", "relative minor / vi", "secondary dominant", "borrowed chord from parallel minor", etc.)
-- "conversionConfidence": A number 0-100 representing how confident you are in the conversion accuracy. 95-100 = all chords clearly diatonic, no ambiguity. 80-94 = mostly clear with minor ambiguities. Below 80 = significant uncertainty.
-- "specialCases": An array of strings noting any conversion edge cases. Examples: "G7 treated as dominant 7th (V7/IV) leading to C", "Slash chord F/C simplified to 1", "Key modulation detected at measure 12", "Ambiguous chord: Dm7 could be ii7 or vi7 depending on context". Leave empty array [] if no special cases.
+## OUTPUT STRUCTURE (3 LAYERS)
+Your JSON response MUST contain these three layers:
+
+### A. RENDER LAYER (what the user sees)
+- "title": Song title
+- "subtitle": "SOM Teaching Edition" (always)
+- "metadata": { "keys": [...detected keys...], "meter": string, "tempo": number, "artist": string }
+- "sections": Array of section objects (see LINE TYPES below)
+
+### B. EXPLANATION LAYER (how you got there)
+- "detectedKey": The primary key detected (e.g., "C", "G", "Bb")
+- "homeNumber": What letter = 1 (e.g., "C = 1")
+- "scaleMap": Array of 7 strings showing the full mapping (e.g., ["C=1", "D=2", "E=3", "F=4", "G=5", "A=6", "B=7"])
+- "chordTranslations": Array of { "original": string, "converted": string, "reason": string, "confidence": number (0-100), "specialCase": boolean }
+  Every unique chord in the song MUST have exactly one entry. The "reason" field should be a brief explanation (e.g., "G is the 5th degree of C major", "Am is the 6th degree minor").
+- "assumptions": Array of strings listing any assumptions you made (e.g., "Assumed key of C based on opening chord progression", "Treated Dm7 as ii7 rather than borrowed chord")
+
+### C. VALIDATION LAYER (self-check)
+- "conversionConfidence": { "overall": number (0-100), "totalChords": number, "resolvedChords": number, "ambiguousCount": number, "reasons": string[] }
+  "reasons" should list specific factors affecting confidence (e.g., "All chords diatonic to detected key", "One borrowed chord flagged")
+- "specialCases": Array of strings for edge cases. Examples: "G7 treated as dominant 7th (V7 analog) leading to C", "Slash chord F/C converted to 4/1", "Key modulation detected at section Bridge", "Ambiguous: Dm7 could be ii7 or vi7"
+- "renderHints": { "viewType": "lead_sheet" | "hymn" | "plain_text", "lyricAlignment": "word" | "syllable", "editionType": "quick" }
 
 ## LINE TYPES
 - "chords": A chord progression line. Include "original" (letter chords), "som" (number conversion), and optionally "lyrics"
@@ -82,46 +65,128 @@ You MUST output valid JSON matching this exact structure. No markdown, no code f
 - "nc": No chord section. Just lyrics with N.C. marking
 - "break": An instrumental break or transition with optional "label"
 
-## CHORD-LYRIC ALIGNMENT (CRITICAL â FOLLOW EXACTLY)
+## CHORD-LYRIC ALIGNMENT (CRITICAL — FOLLOW EXACTLY)
 In the original sheet music, chord symbols (like F, Bb, C) appear ABOVE specific words/syllables. You MUST preserve this exact positioning when converting to SOM numbers.
 
-STEP-BY-STEP PROCESS for each chord line with lyrics:
-1. Look at the original sheet music â note EXACTLY which word or syllable each chord sits above.
-2. Write out the "lyrics" string first.
-3. For the "som" string, place each SOM number at the EXACT same character index as the first letter of the word/syllable it belongs to in the lyrics string.
-4. Fill all other positions with space characters.
-5. The "som" and "lyrics" strings MUST be the same length (or som can be shorter if the last chord is before the last word).
+Rules:
+1. The "original" chord line and "som" chord line must be the SAME LENGTH as the "lyrics" line
+2. Each chord/number must START at the exact character index where the corresponding word begins in the lyrics
+3. Use spaces to pad between chords so alignment is perfect
+4. When a chord name is shorter than the original (e.g., "Bb" → "4½"), pad with spaces to maintain alignment of subsequent chords
+5. When a chord name is longer, you may need to adjust but NEVER shift subsequent lyrics
 
-EXAMPLE â Original has: F over "I", Bb over "tell", C over "Je-", F over "soul":
-  "som":    "1              4        5           1"
-  "lyrics": "I love to tell how Je - sus saved my soul"
-  (Fâ1 at index 0, Bbâ4 at index 15, Câ5 at index 24, Fâ1 at index 36)
+Example:
+lyrics: "Amazing grace how sweet the sound"
+original: "F                 Bb        F"
+som:      "1                 4         1"
 
-EXAMPLE â Original has: F over "Amazing", Bb over "sweet":
-  "som":    "1               4"
-  "lyrics": "Amazing grace how sweet the sound"
-  (Fâ1 at index 0, Bbâ4 at index 18)
+Notice: "F" and "1" start at index 0 (above "Amazing"), "Bb" and "4" start at index 18 (above "sweet"), etc.
 
-EXAMPLE â Original has: Bb over "You", F over "and", C over "mercy", Dm over "Hallelujah":
-  "som":    "4               1              5                      6m"
-  "lyrics": "You are good and Your mercy is forever Hallelujah"
-  (Bbâ4 at index 0, Fâ1 at index 16, Câ5 at index 31, Dmâ6m at index 53)
+## CONVERSION RULES
+1. Detect the key from chord progressions, key signatures, or explicit markings
+2. Map EVERY chord to SOM numbers using the LOCKED syntax above
+3. For songs with key changes, mark modulations as special cases and create new sections
+4. Include the full scale reference for each key section
+5. Extract title, artist, tempo, meter if visible in the document
+6. If info is not in the document, make educated guesses based on the music
+7. Handle N.C. (No Chord) sections properly
+8. For note sequences use dashes: "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
+9. Output ONLY valid JSON. No explanations, no markdown fences.
+10. ALWAYS space-align "som" with "lyrics" — each chord number must start at the EXACT character index of the word/syllable it belongs to. This is the #1 most important formatting rule.
+11. Every chord in "original" MUST have a corresponding entry in "chordTranslations"
+12. If ANY chord is ambiguous, set its specialCase to true and add it to "specialCases" array`;
 
-VERIFY: After generating each pair, mentally count characters to confirm each SOM number starts at the same position as its corresponding word in the lyrics. If they don't align, fix the spacing before outputting.
+// ============================================
+// DETERMINISTIC POST-GEMINI VALIDATOR
+// Runs after AI returns JSON, before sending to frontend
+// ============================================
 
-## CRITICAL RULES
-1. The scaleReference line shows number-to-letter mapping: "1(F) 2(G) 3(A) 4(Bb) 5(C) 6(D) 7(E)"
-2. In chord/note lines ("som" field), use NUMBERS ONLY â do NOT repeat the letter names. The scale reference already tells the user what each number means. Example: "1 4 5 4" NOT "1(F) 4(Bb) 5(C) 4(Bb)"
-3. For slash chords in som lines: bass/chord â e.g., "3/1" NOT "3/1(F/A)"
-4. For quality modifiers: "6m" "2M" "7Â°" "5+" â numbers only, no letters
-5. Detect ALL key changes and create a new section for each key
-6. Include the full scale reference (with letters) for each key section
-7. Extract title, artist, tempo, meter if visible in the document
-8. If info is not in the document, make educated guesses based on the music
-9. Handle N.C. (No Chord) sections properly
-10. For note sequences use dashes: "5-5-5 5-5-5 5-5-5-5 6-4-6-7"
-11. Output ONLY valid JSON. No explanations, no markdown fences.
-12. ALWAYS space-align "som" with "lyrics" â each chord number must start at the EXACT character index of the word/syllable it belongs to. Look at where the chord symbols appear in the original sheet music above the lyrics and replicate that positioning exactly. This is the #1 most important formatting rule.`;
+// Official allowed chord pattern: number (1-7), optional half, optional modifier
+const VALID_CHORD_RE = /^[1-7](½)?(m7|maj7|dim7|m|dim|sus2|sus4|add9|\+|\(7\)|\(9\)|\(11\)|\(13\)|M)?(\/[1-7](½)?)?$/;
+
+interface ValidationWarning {
+  type: 'missing_translation' | 'invalid_syntax' | 'key_mismatch' | 'confidence_mismatch' | 'unresolved_ambiguity';
+  message: string;
+  chord?: string;
+}
+
+function validateConversion(result: Record<string, unknown>): { valid: boolean; warnings: ValidationWarning[]; fixedConfidence?: number } {
+  const warnings: ValidationWarning[] = [];
+  
+  // 1. Check every source chord has a translation
+  const translatedOriginals = new Set<string>();
+  const translations = (result.chordTranslations as Array<{original: string; converted: string; confidence: number; specialCase?: boolean}>) || [];
+  for (const t of translations) {
+    translatedOriginals.add(t.original);
+  }
+  
+  // Collect all unique original chords from sections
+  const allOriginalChords = new Set<string>();
+  const sections = (result.sections as Array<{lines?: Array<{type: string; original?: string}>}>) || [];
+  for (const section of sections) {
+    if (!section.lines) continue;
+    for (const line of section.lines) {
+      if (line.type === 'chords' && line.original) {
+        const chords = (line.original as string).trim().split(/\s+/);
+        for (const c of chords) {
+          if (c && c !== '' && c !== 'N.C.') allOriginalChords.add(c);
+        }
+      }
+    }
+  }
+  
+  for (const chord of allOriginalChords) {
+    if (!translatedOriginals.has(chord)) {
+      warnings.push({ type: 'missing_translation', message: `Chord "${chord}" appears in sections but has no translation entry`, chord });
+    }
+  }
+  
+  // 2. Check every converted chord uses valid syntax
+  for (const t of translations) {
+    const converted = t.converted;
+    if (converted && !VALID_CHORD_RE.test(converted) && converted !== 'N.C.') {
+      warnings.push({ type: 'invalid_syntax', message: `Converted chord "${converted}" (from "${t.original}") does not match official SOM syntax`, chord: converted });
+    }
+  }
+  
+  // 3. Check key compatibility with scaleMap
+  const scaleMap = (result.scaleMap as string[]) || [];
+  const detectedKey = (result.detectedKey as string) || '';
+  if (scaleMap.length === 7 && detectedKey) {
+    const firstMapping = scaleMap[0] || '';
+    if (!firstMapping.startsWith(detectedKey)) {
+      warnings.push({ type: 'key_mismatch', message: `Detected key "${detectedKey}" doesn't match scaleMap first entry "${firstMapping}"` });
+    }
+  }
+  
+  // 4. Check confidence consistency
+  const conf = result.conversionConfidence as {overall: number; ambiguousCount: number} | undefined;
+  if (conf) {
+    const hasSpecialCases = translations.some(t => t.specialCase);
+    if (conf.overall >= 95 && conf.ambiguousCount > 0) {
+      warnings.push({ type: 'confidence_mismatch', message: `Confidence is ${conf.overall}% but ${conf.ambiguousCount} ambiguous chords reported` });
+    }
+    if (conf.overall >= 95 && hasSpecialCases) {
+      warnings.push({ type: 'confidence_mismatch', message: `Confidence is ${conf.overall}% but special cases exist in translations` });
+    }
+  }
+  
+  // 5. Check special cases are not hidden
+  const specialCaseChords = translations.filter(t => t.specialCase);
+  const specialCasesArray = (result.specialCases as string[]) || [];
+  if (specialCaseChords.length > 0 && specialCasesArray.length === 0) {
+    warnings.push({ type: 'unresolved_ambiguity', message: `${specialCaseChords.length} chords flagged as special cases but specialCases array is empty` });
+  }
+  
+  // Calculate adjusted confidence if needed
+  let fixedConfidence: number | undefined;
+  if (conf && warnings.length > 0) {
+    const penalty = warnings.filter(w => w.type !== 'confidence_mismatch').length * 5;
+    fixedConfidence = Math.max(0, Math.min(100, (conf.overall || 90) - penalty));
+  }
+  
+  return { valid: warnings.length === 0, warnings, fixedConfidence };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,76 +199,81 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-    const keyOverride = formData.get('key') as string | null;
+    const file = formData.get('file') as File;
 
     if (!file) {
       return NextResponse.json(
-        { error: 'No file provided' },
+        { error: 'No file uploaded' },
         { status: 400 }
       );
     }
 
-    // Read file as base64
+    console.log(`[process] Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
+
+    // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString('base64');
 
     // Determine MIME type
-    let mimeType = file.type || 'application/pdf';
-    if (file.name.endsWith('.pdf')) mimeType = 'application/pdf';
-    else if (file.name.endsWith('.png')) mimeType = 'image/png';
-    else if (file.name.endsWith('.jpg') || file.name.endsWith('.jpeg')) mimeType = 'image/jpeg';
-
-    // Build the prompt, optionally including a key override
-    let prompt = SOM_CONVERSION_PROMPT;
-    if (keyOverride && keyOverride !== 'Auto-detect') {
-      prompt += `\n\nIMPORTANT: The user has specified the key as ${keyOverride}. Use this as the primary key unless the music clearly modulates to other keys.`;
+    let mimeType = file.type;
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const mimeMap: Record<string, string> = {
+        'pdf': 'application/pdf',
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+      };
+      mimeType = mimeMap[ext || ''] || 'application/pdf';
     }
 
-    // Send to Gemini Vision API for full SOM conversion
-    // gemini-2.5-flash is the only model available for this API key on v1beta
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    console.log(`[process] Using MIME type: ${mimeType}, base64 length: ${base64Data.length}`);
 
-    console.log(`[process] Sending ${(base64Data.length / 1024).toFixed(0)}KB base64 to Gemini 2.5 Flash...`);
+    const prompt = SOM_CONVERSION_PROMPT;
 
-    // Use AbortController for a 55-second timeout (leaving headroom for function limit)
+    // Call Gemini API with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
 
-    let geminiResponse;
+    let geminiResponse: Response;
     try {
-      geminiResponse = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                inlineData: {
-                  mimeType,
-                  data: base64Data,
+      geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                {
+                  inlineData: {
+                    mimeType,
+                    data: base64Data,
+                  }
+                },
+                {
+                  text: prompt
                 }
-              },
-              {
-                text: prompt
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 65536,
-            responseMimeType: 'application/json',
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      });
+              ]
+            }],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 65536,
+              responseMimeType: 'application/json',
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+          }),
+        }
+      );
     } catch (fetchError) {
       clearTimeout(timeout);
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         console.error('[process] Gemini request timed out after 55s');
         return NextResponse.json(
-          { error: 'Processing timed out. The file may be too large â try a smaller PDF or image.' },
+          { error: 'Processing timed out. The file may be too large — try a smaller PDF or image.' },
           { status: 504 }
         );
       }
@@ -215,23 +285,26 @@ export async function POST(request: NextRequest) {
     console.log(`[process] Gemini response status: ${geminiResponse.status}`);
 
     if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error('[process] Gemini API error:', errorText.substring(0, 500));
+      const errorBody = await geminiResponse.text();
+      console.error('[process] Gemini error:', errorBody.substring(0, 500));
       return NextResponse.json(
-        { error: 'Failed to process music file', details: errorText },
-        { status: 500 }
+        { error: 'AI processing failed. Please try again.' },
+        { status: 502 }
       );
     }
 
     const geminiData = await geminiResponse.json();
-    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    const finishReason = geminiData.candidates?.[0]?.finishReason;
-
+    
+    // Extract text from Gemini response
+    const candidates = geminiData.candidates || [];
+    const rawText = candidates[0]?.content?.parts?.[0]?.text || '';
+    const finishReason = candidates[0]?.finishReason || 'unknown';
+    
     console.log(`[process] Gemini returned ${rawText ? rawText.length : 0} chars, finishReason: ${finishReason}`);
 
     // Check for truncated output
     if (finishReason === 'MAX_TOKENS') {
-      console.error('[process] Gemini output was truncated (MAX_TOKENS). Response length:', rawText?.length);
+      console.error('[process] Gemini output was truncated (MAX_TOKENS). Response length:', rawText.length);
       return NextResponse.json(
         { error: 'The music file produced too much content. Try uploading fewer pages at a time.' },
         { status: 422 }
@@ -247,20 +320,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the JSON response from Gemini
-    let somResult;
+    let somResult: Record<string, unknown>;
     try {
-      // Clean potential markdown fences and BOM
-      let cleaned = rawText.replace(/^\uFEFF/, '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      // Handle case where Gemini wraps in array
+      let cleaned = rawText.replace(/^\uFEFF/, '').replace(/\`\`\`json\n?/g, '').replace(/\`\`\`\n?/g, '').trim();
       if (cleaned.startsWith('[') && !cleaned.startsWith('[{')) {
         cleaned = cleaned;
       }
       somResult = JSON.parse(cleaned);
-      // If Gemini returned an array, take the first element
       if (Array.isArray(somResult)) {
-        somResult = somResult[0];
+        somResult = somResult[0] as Record<string, unknown>;
       }
-      console.log(`[process] Successfully parsed SOM result: ${somResult.title || 'untitled'}, ${somResult.sections?.length || 0} sections`);
+      console.log(`[process] Successfully parsed SOM result: ${(somResult as {title?: string}).title || 'untitled'}, ${((somResult as {sections?: unknown[]}).sections || []).length} sections`);
     } catch (parseErr) {
       console.error('[process] JSON parse failed. Error:', parseErr instanceof Error ? parseErr.message : 'unknown');
       console.error('[process] First 200 chars of rawText:', rawText.substring(0, 200));
@@ -271,10 +341,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return the SOM Teaching Edition result with a format flag
+    // ============================================
+    // DETERMINISTIC VALIDATION PASS
+    // ============================================
+    const validation = validateConversion(somResult);
+    
+    if (validation.warnings.length > 0) {
+      console.warn(`[process] Validation found ${validation.warnings.length} warnings:`);
+      for (const w of validation.warnings) {
+        console.warn(`  [${w.type}] ${w.message}`);
+      }
+    }
+    
+    // Ensure required fields exist with defaults
+    if (!somResult.detectedKey && somResult.metadata) {
+      const meta = somResult.metadata as {keys?: string[]};
+      somResult.detectedKey = meta.keys?.[0] || 'C';
+    }
+    if (!somResult.homeNumber && somResult.detectedKey) {
+      somResult.homeNumber = `${somResult.detectedKey} = 1`;
+    }
+    if (!somResult.scaleMap) somResult.scaleMap = [];
+    if (!somResult.chordTranslations) somResult.chordTranslations = [];
+    if (!somResult.assumptions) somResult.assumptions = [];
+    if (!somResult.specialCases) somResult.specialCases = [];
+    if (!somResult.renderHints) {
+      somResult.renderHints = { viewType: 'lead_sheet', lyricAlignment: 'word', editionType: 'quick' };
+    }
+    if (!somResult.conversionConfidence) {
+      somResult.conversionConfidence = { overall: 85, totalChords: 0, resolvedChords: 0, ambiguousCount: 0, reasons: ['Default confidence — model did not return confidence data'] };
+    }
+    
+    // Apply adjusted confidence if validator found issues
+    if (validation.fixedConfidence !== undefined) {
+      const conf = somResult.conversionConfidence as {overall: number; reasons: string[]};
+      const originalConfidence = conf.overall;
+      conf.overall = validation.fixedConfidence;
+      conf.reasons = [...(conf.reasons || []), `Adjusted from ${originalConfidence} due to ${validation.warnings.length} validation warning(s)`];
+    }
+
+    // Return the validated SOM Teaching Edition result
     return NextResponse.json({
       format: 'som-teaching-edition',
       ...somResult,
+      _validation: {
+        valid: validation.valid,
+        warnings: validation.warnings,
+        checkedAt: new Date().toISOString(),
+      },
     });
   } catch (error) {
     console.error('Process error:', error);
