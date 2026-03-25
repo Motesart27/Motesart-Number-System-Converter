@@ -351,7 +351,8 @@ export async function listPracticeAssets(
   filter?: { status?: AssetStatus; concept?: PilotConceptId }
 ): Promise<PracticeAsset[]> {
   const params: Record<string, string> = {
-    sort: JSON.stringify([{ field: 'created_at', direction: 'desc' }]),
+    'sort[0][field]': 'created_at',
+    'sort[0][direction]': 'desc',
   };
 
   // Build filter formula
@@ -492,7 +493,8 @@ export async function getStudentSessions(
   const data = await airtableFetch<PracticeSessionFields>(SESSIONS_TABLE, {
     params: {
       filterByFormula: filterFormula,
-      sort: JSON.stringify([{ field: 'started_at', direction: 'desc' }]),
+      'sort[0][field]': 'started_at',
+      'sort[0][direction]': 'desc',
     },
   });
 
@@ -511,7 +513,8 @@ export async function getPracticeAssetsSummary(): Promise<{
   // Get all assets
   const assetData = await airtableFetch<PracticeAssetFields>(ASSETS_TABLE, {
     params: {
-      sort: JSON.stringify([{ field: 'created_at', direction: 'desc' }]),
+      'sort[0][field]': 'created_at',
+      'sort[0][direction]': 'desc',
     },
   });
   const assets = assetData.records.map(recordToAsset);
