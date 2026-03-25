@@ -1,5 +1,6 @@
-// Practice Events Store — In-memory MVP (Airtable migration planned)
-// Schema locked per Day 1 spec
+import { createRecord, findRecords } from './airtable-client';
+
+const TABLE_NAME = 'Practice_Events';
 
 export interface PracticeEvent {
   event_id: string;
@@ -16,30 +17,70 @@ export interface PracticeEvent {
   created_at: string;
 }
 
-const events: PracticeEvent[] = [];
-const seenClientIds = new Set<string>();
+export async function addEvent(event: PracticeEvent): Promise<{ created: boolean; event: PracticeEvent }> {
+  // Duplicate protection: check if client_event_id already exists
+  const existing = await findRecords(
+    TABLE_NAME,
+    '{client_event_id} = "' + event.client_event_id + '"',
+    1
+  );
 
-export function addEvent(event: PracticeEvent): { created: boolean; event: PracticeEvent } {
-  // Duplicate protection: check client_event_id before any write
-  if (seenClientIds.has(event.client_event_id)) {
-    const existing = events.find(e => e.client_event_id === event.client_event_id);
-    return { created: false, event: existing! };
+  if (existing.length > 0) {
+    const rec = existing[0].fields;
+    return {
+      created: false,
+      event: fieldsToPracticeEvent(rec),
+    };
   }
 
-  seenClientIds.add(event.client_event_id);
-  events.push(event);
+  await createRecord(TABLE_NAME, {
+    event_id: event.event_id,
+    client_event_id: event.client_event_id,
+    student_instrument_id: event.student_instrument_id,
+    concept_id: event.concept_id,
+    chapter: event.chapter,
+    result: event.result,
+    found_pairs: JSON.stringify(event.found_pairs),
+    wrong_taps: JSON.stringify(event.wrong_taps),
+    attempt_count: event.attempt_count,
+    hint_used: event.hint_used,
+    tempo_factor: event.tempo_factor,
+    created_at: event.created_at,
+  });
+
   return { created: true, event };
 }
 
-export function getEventsByStudentConcept(
+export async function getEventsByStudentConcept(
   studentInstrumentId: string,
   conceptId: string
-): PracticeEvent[] {
-  return events.filter(
-    e => e.student_instrument_id === studentInstrumentId && e.concept_id === conceptId
-  );
+): Promise<PracticeEvent[]> {
+  const formula = 'AND({student_instrument_id} = "' + studentInstrumentId + '", {concept_id} = "' + conceptId + '")';
+  const records = await findRecords(TABLE_NAME, formula);
+  return records.map((r: { fields: Record<string, unknown> }) => fieldsToPracticeEvent(r.fields));
 }
 
-export function getAllEvents(): PracticeEvent[] {
-  return [...events];
+function fieldsToPracticeEvent(fields: Record<string, unknown>): PracticeEvent {
+  return {
+    event_id: (fields.event_id as string) || '',
+    client_event_id: (fields.client_event_id as string) || '',
+    student_instrument_id: (fields.student_instrument_id as string) || '',
+    concept_id: (fields.concept_id as string) || '',
+    chapter: (fields.chapter as string) || '',
+    result: (fields.result as string) || '',
+    found_pairs: safeJsonParse(fields.found_pairs as string, []),
+    wrong_taps: safeJsonParse(fields.wrong_taps as string, []),
+    attempt_count: (fields.attempt_count as number) || 0,
+    hint_used: (fields.hint_used as boolean) || false,
+    tempo_factor: (fields.tempo_factor as number) || 1.0,
+    created_at: (fields.created_at as string) || '',
+  };
+}
+
+function safeJsonParse(str: string, fallback: string[]): string[] {
+  try {
+    return JSON.parse(str);
+  } catch (err) {
+    return fallback;
+  }
 }

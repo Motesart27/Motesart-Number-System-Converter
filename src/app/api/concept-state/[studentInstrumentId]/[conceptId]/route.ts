@@ -12,20 +12,28 @@ export async function GET(
 ) {
   const origin = request.headers.get('origin');
   const headers = corsHeaders(origin);
-  const { studentInstrumentId, conceptId } = await params;
 
-  const state = getState(studentInstrumentId, conceptId);
+  try {
+    const { studentInstrumentId, conceptId } = await params;
+    const state = await getState(studentInstrumentId, conceptId);
 
-  if (!state) {
+    if (!state) {
+      return NextResponse.json(
+        {
+          found: false,
+          student_instrument_id: studentInstrumentId,
+          concept_id: conceptId,
+        },
+        { status: 404, headers }
+      );
+    }
+
+    return NextResponse.json({ found: true, state }, { status: 200, headers });
+  } catch (err) {
+    console.error('[concept-state GET] Error:', err);
     return NextResponse.json(
-      {
-        found: false,
-        student_instrument_id: studentInstrumentId,
-        concept_id: conceptId,
-      },
-      { status: 404, headers }
+      { error: 'Server error' },
+      { status: 500, headers }
     );
   }
-
-  return NextResponse.json({ found: true, state }, { status: 200, headers });
 }

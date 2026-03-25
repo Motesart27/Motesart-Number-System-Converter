@@ -1,5 +1,6 @@
-// Concept State Store — Server-side in-memory MVP (Airtable migration planned)
-// Locked fields: only these for v1
+import { findRecords, upsertRecord } from './airtable-client';
+
+const TABLE_NAME = 'Concept_State';
 
 export interface ConceptState {
   student_instrument_id: string;
@@ -15,25 +16,53 @@ export interface ConceptState {
   updated_at: string;
 }
 
-// Key: student_instrument_id::concept_id
-const states = new Map<string, ConceptState>();
-
-function stateKey(studentInstrumentId: string, conceptId: string): string {
-  return studentInstrumentId + '::' + conceptId;
-}
-
-export function getState(
+export async function getState(
   studentInstrumentId: string,
   conceptId: string
-): ConceptState | null {
-  return states.get(stateKey(studentInstrumentId, conceptId)) || null;
+): Promise<ConceptState | null> {
+  const formula = 'AND({student_instrument_id} = "' + studentInstrumentId + '", {concept_id} = "' + conceptId + '")';
+  const records = await findRecords(TABLE_NAME, formula, 1);
+  if (records.length === 0) return null;
+  return fieldsToConceptState(records[0].fields);
 }
 
-export function setState(state: ConceptState): ConceptState {
-  states.set(stateKey(state.student_instrument_id, state.concept_id), state);
-  return state;
+export async function setState(state: ConceptState): Promise<void> {
+  const formula = 'AND({student_instrument_id} = "' + state.student_instrument_id + '", {concept_id} = "' + state.concept_id + '")';
+  await upsertRecord(TABLE_NAME, {
+    student_instrument_id: state.student_instrument_id,
+    concept_id: state.concept_id,
+    confidence: state.confidence,
+    trend: state.trend,
+    mastery_ready: state.mastery_ready,
+    mistake_pattern: state.mistake_pattern,
+    recommended_strategy: state.recommended_strategy,
+    next_action: state.next_action,
+    evidence_summary: state.evidence_summary,
+    last_3_confidences: JSON.stringify(state.last_3_confidences),
+    updated_at: state.updated_at,
+  }, formula);
 }
 
-export function getAllStates(): ConceptState[] {
-  return Array.from(states.values());
+function fieldsToConceptState(fields: Record<string, unknown>): ConceptState {
+  return {
+    student_instrument_id: (fields.student_instrument_id as string) || '',
+    concept_id: (fields.concept_id as string) || '',
+    confidence: (fields.confidence as number) || 0,
+    trend: (fields.trend as string) || 'stable',
+    mastery_ready: (fields.mastery_ready as boolean) || false,
+    mistake_pattern: (fields.mistake_pattern as string) || '',
+    recommended_strategy: (fields.recommended_strategy as string) || '',
+    next_action: (fields.next_action as string) || '',
+    evidence_summary: (fields.evidence_summary as string) || '',
+    last_3_confidences: safeJsonParse(fields.last_3_confidences as string, []),
+    updated_at: (fields.updated_at as string) || '',
+  };
+}
+
+function safeJsonParse(str: string, fallback: number[]): number[] {
+  try {
+    return JSON.parse(str);
+  } catch (err) {
+    return fallback;
+  }
 }

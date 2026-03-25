@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get all practice events for this student + concept
-    const events = getEventsByStudentConcept(student_instrument_id, concept_id);
+    const events = await getEventsByStudentConcept(student_instrument_id, concept_id);
 
     if (events.length === 0) {
       return NextResponse.json(
@@ -33,13 +32,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = getState(student_instrument_id, concept_id);
+    const existing = await getState(student_instrument_id, concept_id);
     const latestEvent = events[events.length - 1];
     const completedEvents = events.filter(e => e.result === 'complete');
     const totalWrongTaps = events.reduce((sum, e) => sum + (e.wrong_taps?.length || 0), 0);
     const hintEverUsed = events.some(e => e.hint_used);
 
-    // Confidence: simple for Find It v1
     let confidence = 0.5;
     if (latestEvent.result === 'complete') {
       const wrongCount = latestEvent.wrong_taps?.length || 0;
@@ -51,12 +49,10 @@ export async function POST(request: NextRequest) {
       confidence = 0.3;
     }
 
-    // Last 3 confidences
     const last3 = existing?.last_3_confidences ? [...existing.last_3_confidences] : [];
     last3.push(confidence);
     if (last3.length > 3) last3.shift();
 
-    // Trend from last 3
     let trend = 'stable';
     if (last3.length >= 2) {
       const recent = last3[last3.length - 1];
@@ -65,7 +61,6 @@ export async function POST(request: NextRequest) {
       else if (recent < prior) trend = 'declining';
     }
 
-    // Mistake pattern
     const allWrongTaps = events.flatMap(e => e.wrong_taps || []);
     let mistakePattern = 'No wrong taps \u2014 found both pairs directly';
     if (allWrongTaps.length > 0) {
@@ -75,7 +70,6 @@ export async function POST(request: NextRequest) {
       mistakePattern = 'Most missed: ' + sorted[0][0] + ' (' + sorted[0][1] + 'x). Total wrong taps: ' + totalWrongTaps;
     }
 
-    // Evidence summary
     const pairsFound = latestEvent.found_pairs || [];
     const evidenceSummary = 'Find It ' + latestEvent.result + ': found '
       + pairsFound.join(' and ') + ' in ' + latestEvent.attempt_count + ' taps. '
@@ -101,16 +95,17 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    setState(newState);
+    await setState(newState);
 
     return NextResponse.json(
       { recomputed: true, state: newState, events_analyzed: events.length },
       { status: 200, headers }
     );
   } catch (err) {
+    console.error('[recompute] Error:', err);
     return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400, headers }
+      { error: 'Server error' },
+      { status: 500, headers }
     );
   }
 }

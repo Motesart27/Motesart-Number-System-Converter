@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate required fields
     const required = ['client_event_id', 'student_instrument_id', 'concept_id', 'chapter', 'result'];
     for (const field of required) {
       if (!body[field]) {
@@ -44,8 +43,7 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
     };
 
-    // Duplicate protection on client_event_id
-    const { created, event: savedEvent } = addEvent(event);
+    const { created, event: savedEvent } = await addEvent(event);
 
     if (!created) {
       return NextResponse.json(
@@ -59,9 +57,10 @@ export async function POST(request: NextRequest) {
       { status: 201, headers }
     );
   } catch (err) {
+    console.error('[practice-events] Error:', err);
     return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400, headers }
+      { error: 'Server error' },
+      { status: 500, headers }
     );
   }
 }
