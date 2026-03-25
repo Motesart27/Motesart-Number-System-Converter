@@ -23,14 +23,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const events = await getEventsByStudentConcept(student_instrument_id, concept_id);
+    const rawEvents = await getEventsByStudentConcept(student_instrument_id, concept_id);
 
-    if (events.length === 0) {
+    if (rawEvents.length === 0) {
       return NextResponse.json(
         { recomputed: false, reason: 'No practice events found' },
         { status: 404, headers }
       );
     }
+
+    // Sort ascending by created_at so events[length-1] is the most recent
+    const events = [...rawEvents].sort((a, b) =>
+      (a.created_at || '').localeCompare(b.created_at || '')
+    );
 
     const existing = await getState(student_instrument_id, concept_id);
 
@@ -40,7 +45,7 @@ export async function POST(request: NextRequest) {
     const totalWrongTaps = events.reduce((sum, e) => sum + (e.wrong_taps?.length || 0), 0);
     const hintEverUsed = events.some(e => e.hint_used);
 
-    // --- Confidence: same formula regardless of chapter ---
+    // --- Confidence: based on latest event only ---
     let confidence = 0.5;
     if (latestEvent.result === 'complete') {
       const wrongCount = latestEvent.wrong_taps?.length || 0;
@@ -76,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Chapter-aware evidence, mastery, and next action ---
-    // next_action uses snake_case to match PracticeChapterWrapper expectations
+    // next_action uses snake_case to match PracticeChapterWrapper
     const pairsFound = latestEvent.found_pairs || [];
     let evidenceSummary = '';
     let masteryReady = false;
