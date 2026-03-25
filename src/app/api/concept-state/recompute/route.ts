@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       { recomputed: true, state: newState, events_analyzed: events.length },
       { status: 200 }
     );
-  } catch {
+  } catch (err) {
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }

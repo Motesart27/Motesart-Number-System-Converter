@@ -3,9 +3,9 @@ import { getState } from '@/lib/concept-state-server-store';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { studentInstrumentId: string; conceptId: string } }
+  { params }: { params: Promise<{ studentInstrumentId: string; conceptId: string }> }
 ) {
-  const { studentInstrumentId, conceptId } = params;
+  const { studentInstrumentId, conceptId } = await params;
   const state = getState(studentInstrumentId, conceptId);
 
   if (!state) {

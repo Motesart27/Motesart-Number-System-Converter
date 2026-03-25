@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addEvent } from '@/lib/practice-events-store';
 import type { PracticeEvent } from '@/lib/practice-events-store';
 
+function generateEventId(): string {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -18,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const event: PracticeEvent = {
-      event_id: crypto.randomUUID(),
+      event_id: generateEventId(),
       client_event_id: body.client_event_id,
       student_instrument_id: body.student_instrument_id,
       concept_id: body.concept_id,
@@ -46,7 +50,7 @@ export async function POST(request: NextRequest) {
       { created: true, event: savedEvent },
       { status: 201 }
     );
-  } catch {
+  } catch (err) {
     return NextResponse.json(
       { error: 'Invalid request body' },
       { status: 400 }
