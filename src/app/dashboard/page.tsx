@@ -851,6 +851,9 @@ export default function Dashboard() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [converterMode, setConverterMode] = useState<'quick' | 'curriculum' | 'compliance'>('quick');
+  const [practiceAssetId, setPracticeAssetId] = useState<string | null>(null);
+  const [savingToPractice, setSavingToPractice] = useState(false);
+  const [practiceAssets, setPracticeAssets] = useState<Array<{id: string; title: string; active_concepts: string[]; created_at: string; practice_count: number}>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileInputClick = () => fileInputRef.current?.click();
@@ -887,6 +890,7 @@ export default function Dashboard() {
 
   /* ââ Convert / Process ââ */
   const handleConvert = useCallback(async () => {
+    setPracticeAssetId(null);
     setIsProcessing(true);
     try {
       if (mode === 'manual') {
@@ -1186,6 +1190,48 @@ export default function Dashboard() {
       }
     }
   };
+  // Load practice assets list
+  const loadPracticeAssets = useCallback(async () => {
+    try {
+      const res = await fetch('/api/practice-assets?action=list');
+      if (res.ok) {
+        const data = await res.json();
+        setPracticeAssets(data.assets || []);
+      }
+    } catch (e) {
+      console.warn('[Dashboard] Failed to load practice assets:', e);
+    }
+  }, []);
+
+  // Save current XML conversion to Practice Assets
+  const handleSaveToPractice = async () => {
+    if (!activeResult || !isMusicXmlResult(activeResult)) return;
+    setSavingToPractice(true);
+    try {
+      const res = await fetch('/api/practice-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ingest',
+          outputXml: activeResult.outputXml,
+          metadata: activeResult.metadata,
+          title: activeResult.metadata.detected_key ? 
+            'Piece in ' + activeResult.metadata.detected_key : 'Untitled Piece',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPracticeAssetId(data.asset.id);
+        loadPracticeAssets();
+      }
+    } catch (e) {
+      console.error('[Dashboard] Save to practice failed:', e);
+    } finally {
+      setSavingToPractice(false);
+    }
+  };
+
+
 
   /* ââ Chat ââ */
   const handleChatSend = async () => {
@@ -1631,6 +1677,37 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
+
+              {/* Save to Practice — only for XML results */}
+              {activeResult && isMusicXmlResult(activeResult) && (
+                <div className="mt-4 pt-4 border-t border-[#1e293b]">
+                  {practiceAssetId ? (
+                    <div className="flex items-center gap-2 text-sm text-[#4ade80]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Saved to Practice Assets
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSaveToPractice}
+                      disabled={savingToPractice}
+                      className="w-full py-2.5 px-4 bg-[#6366f1] hover:bg-[#818cf8] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      {savingToPractice ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                          Save to Practice Assets
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
+            
             </div>
           </div>
         </div>
