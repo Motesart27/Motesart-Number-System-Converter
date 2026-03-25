@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             conversion_confidence: asset.handoff.conversion_confidence,
             created_at: asset.created_at,
           },
-          message: \`Practice asset created with \${asset.handoff.active_concepts.length} active pilot concepts\`,
+          message: `Practice asset created with ${asset.handoff.active_concepts.length} active pilot concepts`,
         });
       }
 
