@@ -15,7 +15,8 @@
     "next-auth": "^5.0.0-beta.30",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "@xmldom/xmldom": "^0.9.5"
+    "@xmldom/xmldom": "^0.9.5",
+    "opensheetmusicdisplay": "^1.8.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
