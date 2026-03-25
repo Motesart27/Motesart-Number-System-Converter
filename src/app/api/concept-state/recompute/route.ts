@@ -33,11 +33,14 @@ export async function POST(request: NextRequest) {
     }
 
     const existing = await getState(student_instrument_id, concept_id);
+
     const latestEvent = events[events.length - 1];
+    const chapter = latestEvent.chapter || 'find_it';
     const completedEvents = events.filter(e => e.result === 'complete');
     const totalWrongTaps = events.reduce((sum, e) => sum + (e.wrong_taps?.length || 0), 0);
     const hintEverUsed = events.some(e => e.hint_used);
 
+    // --- Confidence: same formula regardless of chapter ---
     let confidence = 0.5;
     if (latestEvent.result === 'complete') {
       const wrongCount = latestEvent.wrong_taps?.length || 0;
@@ -49,6 +52,7 @@ export async function POST(request: NextRequest) {
       confidence = 0.3;
     }
 
+    // --- Trend: rolling window of last 3 ---
     const last3 = existing?.last_3_confidences ? [...existing.last_3_confidences] : [];
     last3.push(confidence);
     if (last3.length > 3) last3.shift();
@@ -61,8 +65,9 @@ export async function POST(request: NextRequest) {
       else if (recent < prior) trend = 'declining';
     }
 
+    // --- Mistake pattern: aggregate across all events ---
     const allWrongTaps = events.flatMap(e => e.wrong_taps || []);
-    let mistakePattern = 'No wrong taps \u2014 found both pairs directly';
+    let mistakePattern = 'No wrong taps';
     if (allWrongTaps.length > 0) {
       const wrongCounts: Record<string, number> = {};
       allWrongTaps.forEach(t => { wrongCounts[t] = (wrongCounts[t] || 0) + 1; });
@@ -70,14 +75,43 @@ export async function POST(request: NextRequest) {
       mistakePattern = 'Most missed: ' + sorted[0][0] + ' (' + sorted[0][1] + 'x). Total wrong taps: ' + totalWrongTaps;
     }
 
+    // --- Chapter-aware evidence, mastery, and next action ---
+    // next_action uses snake_case to match PracticeChapterWrapper expectations
     const pairsFound = latestEvent.found_pairs || [];
-    const evidenceSummary = 'Find It ' + latestEvent.result + ': found '
-      + pairsFound.join(' and ') + ' in ' + latestEvent.attempt_count + ' taps. '
-      + (totalWrongTaps === 0 ? 'No wrong taps.' : totalWrongTaps + ' wrong tap(s).')
-      + (hintEverUsed ? ' Hint used.' : '')
-      + ' Confidence: ' + Math.round(confidence * 100) + '%';
+    let evidenceSummary = '';
+    let masteryReady = false;
+    let recommendedStrategy = '';
+    let nextAction = '';
 
-    const masteryReady = confidence >= 0.7 && completedEvents.length > 0;
+    const completedFindIt = completedEvents.some(e => (e.chapter || 'find_it') === 'find_it');
+    const completedPlayIt = completedEvents.some(e => e.chapter === 'play_it');
+
+    if (chapter === 'play_it') {
+      evidenceSummary = 'Play It ' + latestEvent.result + ': played '
+        + pairsFound.join(', ') + ' in ' + latestEvent.attempt_count + ' taps. '
+        + (totalWrongTaps === 0 ? 'No wrong taps.' : totalWrongTaps + ' wrong tap(s).')
+        + (hintEverUsed ? ' Hint used.' : '')
+        + ' Confidence: ' + Math.round(confidence * 100) + '%';
+
+      masteryReady = confidence >= 0.7 && completedPlayIt;
+      recommendedStrategy = masteryReady
+        ? 'advance_to_move_it'
+        : (confidence < 0.5 ? 'retry_with_hint' : 'retry_without_hint');
+      nextAction = masteryReady ? 'move_it' : 'retry_play_it';
+
+    } else {
+      evidenceSummary = 'Find It ' + latestEvent.result + ': found '
+        + pairsFound.join(' and ') + ' in ' + latestEvent.attempt_count + ' taps. '
+        + (totalWrongTaps === 0 ? 'No wrong taps.' : totalWrongTaps + ' wrong tap(s).')
+        + (hintEverUsed ? ' Hint used.' : '')
+        + ' Confidence: ' + Math.round(confidence * 100) + '%';
+
+      masteryReady = confidence >= 0.7 && completedFindIt;
+      recommendedStrategy = masteryReady
+        ? 'advance_to_play_it'
+        : (confidence < 0.5 ? 'retry_with_hint' : 'retry_without_hint');
+      nextAction = masteryReady ? 'play_it' : 'retry_find_it';
+    }
 
     const newState: ConceptState = {
       student_instrument_id,
@@ -86,10 +120,8 @@ export async function POST(request: NextRequest) {
       trend,
       mastery_ready: masteryReady,
       mistake_pattern: mistakePattern,
-      recommended_strategy: masteryReady
-        ? 'advance_to_play_it'
-        : (confidence < 0.5 ? 'retry_with_hint' : 'retry_without_hint'),
-      next_action: masteryReady ? 'Play It' : 'Retry Find It',
+      recommended_strategy: recommendedStrategy,
+      next_action: nextAction,
       evidence_summary: evidenceSummary,
       last_3_confidences: last3,
       updated_at: new Date().toISOString(),
