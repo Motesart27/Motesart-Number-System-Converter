@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addEvent } from '@/lib/practice-events-store';
 import type { PracticeEvent } from '@/lib/practice-events-store';
+import { corsHeaders, handleOptions } from '@/lib/cors';
 
 function generateEventId(): string {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
 
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const headers = corsHeaders(origin);
+
   try {
     const body = await request.json();
 
@@ -16,7 +24,7 @@ export async function POST(request: NextRequest) {
       if (!body[field]) {
         return NextResponse.json(
           { error: 'Missing required field: ' + field },
-          { status: 400 }
+          { status: 400, headers }
         );
       }
     }
@@ -42,18 +50,18 @@ export async function POST(request: NextRequest) {
     if (!created) {
       return NextResponse.json(
         { duplicate: true, event: savedEvent },
-        { status: 200 }
+        { status: 200, headers }
       );
     }
 
     return NextResponse.json(
       { created: true, event: savedEvent },
-      { status: 201 }
+      { status: 201, headers }
     );
   } catch (err) {
     return NextResponse.json(
       { error: 'Invalid request body' },
-      { status: 400 }
+      { status: 400, headers }
     );
   }
 }

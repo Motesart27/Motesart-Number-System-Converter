@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getState, setState } from '@/lib/concept-state-server-store';
 import type { ConceptState } from '@/lib/concept-state-server-store';
 import { getEventsByStudentConcept } from '@/lib/practice-events-store';
+import { corsHeaders, handleOptions } from '@/lib/cors';
+
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const headers = corsHeaders(origin);
+
   try {
     const body = await request.json();
     const { student_instrument_id, concept_id } = body;
@@ -11,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!student_instrument_id || !concept_id) {
       return NextResponse.json(
         { error: 'Missing student_instrument_id or concept_id' },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
@@ -21,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (events.length === 0) {
       return NextResponse.json(
         { recomputed: false, reason: 'No practice events found' },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
@@ -69,11 +77,11 @@ export async function POST(request: NextRequest) {
 
     // Evidence summary
     const pairsFound = latestEvent.found_pairs || [];
-    const evidenceSummary = 'Find It ' + latestEvent.result + ': found ' + pairsFound.join(' and ') +
-      ' in ' + latestEvent.attempt_count + ' taps. ' +
-      (totalWrongTaps === 0 ? 'No wrong taps.' : totalWrongTaps + ' wrong tap(s).') +
-      (hintEverUsed ? ' Hint used.' : '') +
-      ' Confidence: ' + Math.round(confidence * 100) + '%';
+    const evidenceSummary = 'Find It ' + latestEvent.result + ': found '
+      + pairsFound.join(' and ') + ' in ' + latestEvent.attempt_count + ' taps. '
+      + (totalWrongTaps === 0 ? 'No wrong taps.' : totalWrongTaps + ' wrong tap(s).')
+      + (hintEverUsed ? ' Hint used.' : '')
+      + ' Confidence: ' + Math.round(confidence * 100) + '%';
 
     const masteryReady = confidence >= 0.7 && completedEvents.length > 0;
 
@@ -84,7 +92,9 @@ export async function POST(request: NextRequest) {
       trend,
       mastery_ready: masteryReady,
       mistake_pattern: mistakePattern,
-      recommended_strategy: masteryReady ? 'advance_to_play_it' : (confidence < 0.5 ? 'retry_with_hint' : 'retry_without_hint'),
+      recommended_strategy: masteryReady
+        ? 'advance_to_play_it'
+        : (confidence < 0.5 ? 'retry_with_hint' : 'retry_without_hint'),
       next_action: masteryReady ? 'Play It' : 'Retry Find It',
       evidence_summary: evidenceSummary,
       last_3_confidences: last3,
@@ -95,12 +105,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { recomputed: true, state: newState, events_analyzed: events.length },
-      { status: 200 }
+      { status: 200, headers }
     );
   } catch (err) {
     return NextResponse.json(
       { error: 'Invalid request body' },
-      { status: 400 }
+      { status: 400, headers }
     );
   }
 }
