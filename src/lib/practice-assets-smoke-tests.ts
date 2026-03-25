@@ -78,7 +78,7 @@ export function runPracticeAssetsSmokeTests(): { passed: boolean; results: TestR
     'conversion_confidence', 'special_cases', 'converter_mode'
   ];
   const handoff = asset.handoff;
-  const missingFields = requiredHandoffFields.filter(f => (handoff as Record<string, unknown>)[f] == null);
+  const missingFields = requiredHandoffFields.filter(f => (handoff as unknown as Record<string, unknown>)[f] == null);
   const t3 = missingFields.length === 0 
     && handoff.active_concepts.length === 2 
     && handoff.source_type === 'musicxml';
