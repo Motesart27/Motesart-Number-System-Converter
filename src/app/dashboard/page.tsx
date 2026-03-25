@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Upload,
   RefreshCw,
@@ -130,7 +130,42 @@ interface SomTeachingEdition {
   _converterMode?: string;
 }
 
-type ActiveResult = OldConversionResult | SomTeachingEdition;
+type ActiveResult = OldConversionResult | SomTeachingEdition | MusicXmlResult;
+
+interface MusicXmlResult {
+  format: 'musicxml-som';
+  outputXml: string;
+  metadata: {
+    detected_key: string;
+    number_home: string;
+    scale_map: string[];
+    conversion_mode: string;
+    motesart_concepts_detected: string[];
+    tempo_bpm: number;
+    measure_count: number;
+    total_notes: number;
+    total_chords: number;
+    conversion_confidence: number;
+  };
+  notes: Array<{
+    measureNumber: number;
+    beat: number;
+    originalStep: string;
+    originalAlter: number;
+    originalOctave: number;
+    somDegree: string;
+    duration: number;
+    type: string;
+    isRest: boolean;
+  }>;
+  chords: Array<{
+    measureNumber: number;
+    originalRoot: string;
+    originalKind: string;
+    somNotation: string;
+  }>;
+  scaleMap: string[];
+}
 
 interface UploadedFile {
   name: string;
@@ -148,7 +183,161 @@ function isSomTeachingEdition(r: ActiveResult): r is SomTeachingEdition {
   return r && (r as SomTeachingEdition).format === 'som-teaching-edition';
 }
 
+function isMusicXmlResult(r: ActiveResult): r is MusicXmlResult {
+  return r && (r as MusicXmlResult).format === 'musicxml-som';
+}
+
 /* ââ SOM Legend Card ââ */
+
+/* ---- MusicXML Result View (OSMD sheet music renderer) ---- */
+function MusicXmlResultView({ data }: { data: MusicXmlResult }) {
+  const osmdContainerRef = useRef<HTMLDivElement>(null);
+  const [osmdLoaded, setOsmdLoaded] = useState(false);
+  const [osmdError, setOsmdError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!osmdContainerRef.current || !data.outputXml) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { OpenSheetMusicDisplay } = await import('opensheetmusicdisplay');
+        if (cancelled) return;
+        const osmd = new OpenSheetMusicDisplay(osmdContainerRef.current!, {
+          autoResize: true,
+          drawTitle: true,
+          drawSubtitle: true,
+          drawComposer: true,
+        });
+        await osmd.load(data.outputXml);
+        if (cancelled) return;
+        osmd.render();
+        setOsmdLoaded(true);
+      } catch (err) {
+        console.error('OSMD render error:', err);
+        if (!cancelled) setOsmdError(err instanceof Error ? err.message : 'Failed to render sheet music');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [data.outputXml]);
+
+  const degreeColors: Record<string, string> = {
+    '1': '#06b6d4', '2': '#6366f1', '3': '#a855f7', '4': '#06b6d4',
+    '5': '#6366f1', '6': '#a855f7', '7': '#ec4899', 'R': '#64748b',
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Title Bar */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center">
+          <Music className="w-5 h-5 text-[#06b6d4]" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-white">MusicXML &rarr; SOM Conversion</h2>
+          <p className="text-[11px] text-[#64748b]">Deterministic conversion &bull; 100% confidence</p>
+        </div>
+      </div>
+
+      {/* Summary Badges */}
+      <div className="flex gap-2 flex-wrap">
+        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#6366f1]/15 text-[#818cf8] border border-[#6366f1]/20">Key: {data.metadata.detected_key} Major</span>
+        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#06b6d4]/15 text-[#22d3ee] border border-[#06b6d4]/20">{data.metadata.number_home}</span>
+        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/20">{data.metadata.measure_count} measures</span>
+        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/20">{data.metadata.total_notes} notes</span>
+        {data.metadata.tempo_bpm > 0 && <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#ec4899]/15 text-[#f472b6] border border-[#ec4899]/20">{data.metadata.tempo_bpm} BPM</span>}
+      </div>
+
+      {/* Scale Map */}
+      <div className="bg-[#111827] border border-white/[0.06] rounded-xl p-4">
+        <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Scale Map</p>
+        <div className="flex gap-2 flex-wrap">
+          {(data.scaleMap || []).map((m, i) => <span key={i} className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[#1e293b] text-white border border-white/[0.06]">{m}</span>)}
+        </div>
+      </div>
+      {/* OSMD Sheet Music Render */}
+      <div className="bg-white rounded-xl overflow-hidden border border-white/[0.1] shadow-lg">
+        <div className="px-4 py-2 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center gap-2">
+          <FileText className="w-4 h-4 text-[#6366f1]" />
+          <span className="text-xs font-semibold text-[#334155]">Sheet Music with SOM Numbers</span>
+        </div>
+        <div ref={osmdContainerRef} className="p-4 min-h-[200px]" style={{ background: '#fff' }}>
+          {!osmdLoaded && !osmdError && (
+            <div className="flex items-center justify-center h-[200px]">
+              <div className="text-center">
+                <RefreshCw className="w-6 h-6 text-[#6366f1] animate-spin mx-auto mb-2" />
+                <p className="text-sm text-[#64748b]">Rendering sheet music...</p>
+              </div>
+            </div>
+          )}
+          {osmdError && (
+            <div className="flex items-center justify-center h-[200px]">
+              <p className="text-sm text-[#ef4444]">Could not render notation: {osmdError}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Note Conversion Reference */}
+      <div className="bg-[#111827] border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="px-4 py-2 bg-white/[0.02] border-b border-white/[0.06]">
+          <span className="text-xs font-semibold text-[#06b6d4]">Note Conversion Reference</span>
+        </div>
+        <div className="p-3 max-h-[300px] overflow-y-auto">
+          <div className="grid grid-cols-[60px_1fr] gap-y-1">
+            {Array.from(new Set((data.notes || []).filter(n => !n.isRest).map(n => n.measureNumber))).map(mNum => (
+              <div key={mNum} className="contents">
+                <span className="text-[10px] font-bold text-[#475569] py-1">M{mNum}</span>
+                <div className="flex flex-wrap gap-1 py-1">
+                  {(data.notes || []).filter(n => n.measureNumber === mNum && !n.isRest).map((note, ni) => {
+                    const baseNum = note.somDegree[0] || '1';
+                    const color = degreeColors[baseNum] || '#94a3b8';
+                    return (
+                      <span key={ni} className="inline-flex flex-col items-center px-1.5 py-0.5 rounded bg-[#1e293b]/80 border border-white/[0.04]">
+                        <span className="text-[9px] text-[#64748b]">{note.originalStep}{note.originalAlter > 0 ? '#' : note.originalAlter < 0 ? 'b' : ''}{note.originalOctave}</span>
+                        <span className="text-sm font-bold" style={{ color }}>{note.somDegree}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Chord Conversions */}
+      {(data.chords || []).length > 0 && (
+        <div className="bg-[#111827] border border-white/[0.06] rounded-xl p-4">
+          <p className="text-[10px] font-semibold text-[#f97316] uppercase tracking-wider mb-2">Chord Conversions</p>
+          <div className="flex flex-wrap gap-2">
+            {(data.chords || []).map((chord, i) => (
+              <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1e293b] border border-white/[0.06]">
+                <span className="text-xs text-[#f97316] font-mono">{chord.originalRoot} {chord.originalKind}</span>
+                <span className="text-[10px] text-[#475569]">&rarr;</span>
+                <span className="text-xs text-[#06b6d4] font-bold font-mono">{chord.somNotation}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Concepts Detected */}
+      {(data.metadata.motesart_concepts_detected || []).length > 0 && (
+        <div className="bg-[#111827] border border-[#6366f1]/20 rounded-xl p-4">
+          <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Concepts Detected</p>
+          <div className="flex flex-wrap gap-1.5">
+            {data.metadata.motesart_concepts_detected.map((c, i) => (
+              <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#6366f1]/15 text-[#818cf8] border border-[#6366f1]/20">
+                {c.replace('T_', '').replace(/_/g, ' ')}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SomLegendCard() {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -1228,7 +1417,9 @@ export default function Dashboard() {
                   {activeFileName && (
                     <p className="text-xs text-[#64748b] mb-3">Source: {activeFileName}</p>
                   )}
-                  {isSomTeachingEdition(activeResult) ? (
+                  {isMusicXmlResult(activeResult) ? (
+                    <MusicXmlResultView data={activeResult} />
+                  ) : isSomTeachingEdition(activeResult) ? (
                     <SomTeachingEditionView data={activeResult} converterMode={converterMode} setConverterMode={setConverterMode} />
                   ) : (
                     <OldResultView result={activeResult as OldConversionResult} originalPreview={originalPreview} />
