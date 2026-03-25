@@ -7,6 +7,8 @@
  * - Conversions (storing results)
  * - Uploaded Files (file tracking)
  * - Analytics
+ * - Practice Assets (persistent converter output)
+ * - Practice Sessions (student practice records)
  *
  * Note: Uses the Airtable REST API directly (no SDK needed for lightweight usage).
  */
@@ -15,21 +17,22 @@ const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || '';
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || 'appul9PF1Wp6DM7li';
 const AIRTABLE_API_URL = 'https://api.airtable.com/v0';
 
-interface AirtableRecord<T = Record<string, unknown>> {
+export interface AirtableRecord<T = Record<string, unknown>> {
   id: string;
   fields: T;
   createdTime: string;
 }
 
-interface AirtableResponse<T = Record<string, unknown>> {
+export interface AirtableResponse<T = Record<string, unknown>> {
   records: AirtableRecord<T>[];
   offset?: string;
 }
 
 /**
  * Generic Airtable API fetch helper.
+ * Exported so other modules (e.g. practice-assets) can use it.
  */
-async function airtableFetch<T = Record<string, unknown>>(
+export async function airtableFetch<T = Record<string, unknown>>(
   tableName: string,
   options?: {
     method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -42,7 +45,6 @@ async function airtableFetch<T = Record<string, unknown>>(
 
   let url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`;
   if (recordId) url += `/${recordId}`;
-
   if (params) {
     const searchParams = new URLSearchParams(params);
     url += `?${searchParams.toString()}`;
@@ -84,7 +86,9 @@ export interface KeyMappingFields {
  */
 export async function getKeyMappings(): Promise<AirtableRecord<KeyMappingFields>[]> {
   const data = await airtableFetch<KeyMappingFields>('Key_Mappings', {
-    params: { sort: JSON.stringify([{ field: 'mapping_id', direction: 'asc' }]) },
+    params: {
+      sort: JSON.stringify([{ field: 'mapping_id', direction: 'asc' }]),
+    },
   });
   return data.records;
 }

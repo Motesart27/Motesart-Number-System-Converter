@@ -15,17 +15,17 @@ import {
 
 /**
  * POST /api/practice-assets
- * 
+ *
  * Actions:
- *   - { action: 'ingest' }     — Create a practice asset from converter output
- *   - { action: 'assign' }     — Assign asset to students
- *   - { action: 'record' }     — Record a practice session
- * 
+ * - { action: 'ingest' } — Create a practice asset from converter output
+ * - { action: 'assign' } — Assign asset to students
+ * - { action: 'record' } — Record a practice session
+ *
  * GET /api/practice-assets?action=list
- *   - ?action=list              — List all assets (optional: status, concept filters)
- *   - ?action=get&id=...        — Get a single asset
- *   - ?action=sessions&student=...  — Get student sessions
- *   - ?action=summary           — Get dashboard summary
+ * - ?action=list — List all assets (optional: status, concept filters)
+ * - ?action=get&id=... — Get a single asset
+ * - ?action=sessions&student=... — Get student sessions
+ * - ?action=summary — Get dashboard summary
  */
 
 export async function GET(request: NextRequest) {
@@ -37,10 +37,11 @@ export async function GET(request: NextRequest) {
       case 'list': {
         const status = searchParams.get('status') as AssetStatus | null;
         const concept = searchParams.get('concept') as PilotConceptId | null;
-        const assets = listPracticeAssets({
+        const assets = await listPracticeAssets({
           status: status || undefined,
           concept: concept || undefined,
         });
+
         // Return metadata only (not full XML) for list view
         const slim = assets.map(a => ({
           id: a.id,
@@ -57,17 +58,24 @@ export async function GET(request: NextRequest) {
           avg_accuracy: a.avg_accuracy,
           assigned_to: a.assigned_to,
         }));
+
         return NextResponse.json({ assets: slim, total: slim.length });
       }
 
       case 'get': {
         const id = searchParams.get('id');
         if (!id) {
-          return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'Missing id parameter' },
+            { status: 400 }
+          );
         }
-        const asset = getPracticeAsset(id);
+        const asset = await getPracticeAsset(id);
         if (!asset) {
-          return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+          return NextResponse.json(
+            { error: 'Asset not found' },
+            { status: 404 }
+          );
         }
         return NextResponse.json({ asset });
       }
@@ -75,15 +83,18 @@ export async function GET(request: NextRequest) {
       case 'sessions': {
         const studentId = searchParams.get('student');
         if (!studentId) {
-          return NextResponse.json({ error: 'Missing student parameter' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'Missing student parameter' },
+            { status: 400 }
+          );
         }
         const assetId = searchParams.get('asset') || undefined;
-        const sessions = getStudentSessions(studentId, assetId);
+        const sessions = await getStudentSessions(studentId, assetId);
         return NextResponse.json({ sessions, total: sessions.length });
       }
 
       case 'summary': {
-        const summary = getPracticeAssetsSummary();
+        const summary = await getPracticeAssetsSummary();
         return NextResponse.json({
           ...summary,
           pilot_concepts_total: PILOT_CONCEPTS.length,
@@ -91,7 +102,10 @@ export async function GET(request: NextRequest) {
       }
 
       default:
-        return NextResponse.json({ error: 'Unknown action: ' + action }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Unknown action: ' + action },
+          { status: 400 }
+        );
     }
   } catch (error) {
     console.error('[practice-assets GET]', error);
@@ -108,14 +122,16 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     if (!action) {
-      return NextResponse.json({ error: 'Missing action field' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing action field' },
+        { status: 400 }
+      );
     }
 
     switch (action) {
       case 'ingest': {
-        // Expects converter output: { outputXml, metadata, title? }
         const { outputXml, metadata, title } = body;
-        
+
         if (!outputXml || typeof outputXml !== 'string') {
           return NextResponse.json(
             { error: 'Missing or invalid outputXml' },
@@ -133,7 +149,7 @@ export async function POST(request: NextRequest) {
         const required = [
           'detected_key', 'number_home', 'scale_map', 'conversion_mode',
           'motesart_concepts_detected', 'tempo_bpm', 'measure_count',
-          'total_notes', 'total_chords', 'conversion_confidence'
+          'total_notes', 'total_chords', 'conversion_confidence',
         ];
         const missing = required.filter(f => metadata[f] == null);
         if (missing.length > 0) {
@@ -143,7 +159,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const asset = createPracticeAsset(outputXml, metadata, title);
+        const asset = await createPracticeAsset(outputXml, metadata, title);
 
         return NextResponse.json({
           success: true,
@@ -167,9 +183,12 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        const updated = assignAsset(asset_id, student_ids, teacher_id);
+        const updated = await assignAsset(asset_id, student_ids, teacher_id);
         if (!updated) {
-          return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+          return NextResponse.json(
+            { error: 'Asset not found' },
+            { status: 404 }
+          );
         }
         return NextResponse.json({
           success: true,
@@ -187,11 +206,14 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        
+
         // Validate asset exists
-        const asset = getPracticeAsset(session.asset_id);
+        const asset = await getPracticeAsset(session.asset_id);
         if (!asset) {
-          return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+          return NextResponse.json(
+            { error: 'Asset not found' },
+            { status: 404 }
+          );
         }
 
         const practiceSession: PracticeSession = {
@@ -207,7 +229,7 @@ export async function POST(request: NextRequest) {
           ),
         };
 
-        recordPracticeSession(practiceSession);
+        await recordPracticeSession(practiceSession);
 
         return NextResponse.json({
           success: true,
@@ -218,7 +240,10 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        return NextResponse.json({ error: 'Unknown action: ' + action }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Unknown action: ' + action },
+          { status: 400 }
+        );
     }
   } catch (error) {
     console.error('[practice-assets POST]', error);
