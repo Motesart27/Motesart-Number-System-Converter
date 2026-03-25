@@ -251,7 +251,7 @@ export function filterToPilotConcepts(candidates: string[]): {
 // ============================================================
 
 const ASSETS_TABLE = 'Practice_Assets';
-const SESSIONS_TABLE = 'Practice_Sessions';
+const SESSIONS_TABLE = 'Asset_Practice_Sessions';
 
 /**
  * Create a practice asset from converter output.
