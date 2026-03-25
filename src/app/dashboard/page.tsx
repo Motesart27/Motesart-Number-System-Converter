@@ -743,7 +743,9 @@ export default function Dashboard() {
         const clientTimeout = setTimeout(() => controller.abort(), 65000);
 
         try {
-          const res = await fetch('/api/process', { method: 'POST', body: formData, signal: controller.signal });
+          const isXmlFile = fileToProcess.name.toLowerCase().endsWith('.xml') || fileToProcess.name.toLowerCase().endsWith('.musicxml');
+          const endpoint = isXmlFile ? '/api/process-xml' : '/api/process';
+          const res = await fetch(endpoint, { method: 'POST', body: formData, signal: controller.signal });
           clearTimeout(clientTimeout);
           let result;
           try {
@@ -757,6 +759,8 @@ export default function Dashboard() {
             setActiveFileName(fileToProcess.name);
             const keyStr = result.format === 'som-teaching-edition'
               ? result.metadata?.keys?.[0]
+              : result.format === 'musicxml-som'
+              ? result.metadata?.detected_key
               : result.key?.tonic;
             setUploadedFiles(prev => prev.map(f =>
               f.name === fileToProcess.name
@@ -926,7 +930,7 @@ export default function Dashboard() {
   };
 
   /* ââ Export ââ */
-  const handleExport = async (format: 'pdf' | 'csv' | 'text') => {
+  const handleExport = async (format: 'pdf' | 'csv' | 'text' | 'xml') => {
     if (!activeResult) return;
 
     if (format === 'pdf' && isSomTeachingEdition(activeResult)) {
@@ -971,6 +975,15 @@ export default function Dashboard() {
           URL.revokeObjectURL(url);
         }
       }
+    } else if (format === 'xml' && (activeResult as any)?.outputXml) {
+      // XML export — download the converted MusicXML
+      const xmlContent = (activeResult as any).outputXml;
+      const blob = new Blob([xmlContent], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const xmlFileName = ((activeResult as any).metadata?.detected_key || 'motesart') + '-som-conversion.musicxml';
+      a.href = url; a.download = xmlFileName; a.click();
+      URL.revokeObjectURL(url);
     } else {
       // Plain text / CSV export
       const content = buildTextContent();
@@ -1414,8 +1427,8 @@ export default function Dashboard() {
                 <Download className="w-5 h-5 text-[#6366f1]" />
                 <h2 className="text-sm font-semibold text-[#e2e8f0]">Export & Share</h2>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {(['pdf', 'csv', 'text'] as const).map(fmt => (
+              <div className="grid grid-cols-4 gap-3">
+                {(['pdf', 'csv', 'text', 'xml'] as const).map(fmt => (
                   <button
                     key={fmt}
                     onClick={() => handleExport(fmt)}
