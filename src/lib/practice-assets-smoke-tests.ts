@@ -53,12 +53,12 @@ export async function runPracticeAssetsSmokeTests(): Promise<{
     'Smoke Test Piece'
   );
   const t1 =
-    asset !== null && asset.id.startsWith('pa_') && asset.status === 'ready';
+    asset !== null && asset.id.startsWith('pa_') && asset.status === 'saved_to_practice';
   results.push({
     test: 'Create practice asset returns valid asset with id and ready status',
     passed: t1,
     got: asset ? 'id=' + asset.id + ', status=' + asset.status : 'null',
-    expected: 'id=pa_*, status=ready',
+    expected: 'id=pa_*, status=saved_to_practice',
   });
 
   // ── Test 2: Pilot concept filtering (pure function, still sync) ──
