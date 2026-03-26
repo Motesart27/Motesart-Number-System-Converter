@@ -37,7 +37,8 @@ export type PilotConceptId = (typeof PILOT_CONCEPTS)[number];
 // ============================================================
 
 /** Status lifecycle of a practice asset */
-export type AssetStatus = 'draft' | 'ready' | 'assigned' | 'archived';
+/** Asset lifecycle: converter sets first two, Practice app sets later two */
+export type AssetStatus = 'converted' | 'saved_to_practice' | 'assigned' | 'practiced';
 
 /** The handoff contract between converter and practice app */
 export interface ConverterHandoff {
@@ -47,6 +48,8 @@ export interface ConverterHandoff {
   number_home: string;
   tempo_bpm: number;
   measure_count: number;
+  /** @frozen — shared handoff field */
+  part_count: number;
   total_notes: number;
   total_chords: number;
   scale_map: string[];
@@ -113,6 +116,7 @@ interface PracticeAssetFields {
   number_home: string;
   tempo_bpm: number;
   measure_count: number;
+  part_count: number;
   total_notes: number;
   total_chords: number;
   scale_map: string;
@@ -175,7 +179,7 @@ function recordToAsset(rec: AirtableRecord<PracticeAssetFields>): PracticeAsset 
     airtable_id: rec.id,
     created_at: f.created_at || rec.createdTime,
     updated_at: f.updated_at || rec.createdTime,
-    status: (f.status || 'ready') as AssetStatus,
+    status: (f.status || 'saved_to_practice') as AssetStatus,
     output_xml: f.output_xml || '',
     handoff: {
       source_type: (f.source_type || 'musicxml') as ConverterHandoff['source_type'],
@@ -184,6 +188,7 @@ function recordToAsset(rec: AirtableRecord<PracticeAssetFields>): PracticeAsset 
       number_home: f.number_home || '',
       tempo_bpm: f.tempo_bpm || 0,
       measure_count: f.measure_count || 0,
+      part_count: f.part_count || 1,
       total_notes: f.total_notes || 0,
       total_chords: f.total_chords || 0,
       scale_map: safeJsonParse<string[]>(f.scale_map, []),
@@ -267,6 +272,7 @@ export async function createPracticeAsset(
     motesart_concepts_detected: string[];
     tempo_bpm: number;
     measure_count: number;
+    part_count?: number;
     total_notes: number;
     total_chords: number;
     conversion_confidence: number;
@@ -290,12 +296,13 @@ export async function createPracticeAsset(
   const fields: PracticeAssetFields = {
     asset_id: assetId,
     title: title || 'Untitled Piece',
-    status: 'ready',
+    status: 'saved_to_practice',
     source_type: 'musicxml',
     detected_key: metadata.detected_key,
     number_home: metadata.number_home,
     tempo_bpm: metadata.tempo_bpm,
     measure_count: metadata.measure_count,
+    part_count: metadata.part_count || 1,
     total_notes: metadata.total_notes,
     total_chords: metadata.total_chords,
     scale_map: JSON.stringify(metadata.scale_map),
@@ -525,7 +532,7 @@ export async function getPracticeAssetsSummary(): Promise<{
 
   // Aggregate
   const byStatus: Record<AssetStatus, number> = {
-    draft: 0, ready: 0, assigned: 0, archived: 0,
+    converted: 0, saved_to_practice: 0, assigned: 0, practiced: 0,
   };
   const conceptSet = new Set<PilotConceptId>();
 

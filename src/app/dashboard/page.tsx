@@ -852,6 +852,7 @@ export default function Dashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const [converterMode, setConverterMode] = useState<'quick' | 'curriculum' | 'compliance'>('quick');
   const [practiceAssetId, setPracticeAssetId] = useState<string | null>(null);
+  const [practiceAssetInfo, setPracticeAssetInfo] = useState<{ id: string; active_concepts: string[]; status: string; detected_key: string } | null>(null);
   const [savingToPractice, setSavingToPractice] = useState(false);
   const [practiceAssets, setPracticeAssets] = useState<Array<{id: string; title: string; active_concepts: string[]; created_at: string; practice_count: number}>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -891,6 +892,7 @@ export default function Dashboard() {
   /* ââ Convert / Process ââ */
   const handleConvert = useCallback(async () => {
     setPracticeAssetId(null);
+    setPracticeAssetInfo(null);
     setIsProcessing(true);
     try {
       if (mode === 'manual') {
@@ -1222,6 +1224,7 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) {
         setPracticeAssetId(data.asset.id);
+        setPracticeAssetInfo(data.asset);
         loadPracticeAssets();
       }
     } catch (e) {
@@ -1682,10 +1685,21 @@ export default function Dashboard() {
               {activeResult && isMusicXmlResult(activeResult) && (
                 <div className="mt-4 pt-4 border-t border-[#1e293b]">
                   {practiceAssetId ? (
-                    <div className="flex items-center gap-2 text-sm text-[#4ade80]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      Saved to Practice Assets
+                    <div className="rounded-lg border border-[#4ade80]/30 bg-[#4ade80]/5 p-3 space-y-1.5">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-[#4ade80]">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Saved to Practice Assets
+                      </div>
+                    {practiceAssetInfo && practiceAssetInfo.active_concepts && practiceAssetInfo.active_concepts.length > 0 && (
+                      <div className="text-xs text-[#94a3b8]">
+                        {practiceAssetInfo.active_concepts.length} pilot concept{practiceAssetInfo.active_concepts.length !== 1 ? 's' : ''} detected
+                      </div>
+                    )}
+                    <div className="text-xs font-medium text-[#4ade80]/80">
+                      Ready for assignment in Practice
+                      </div>
                     </div>
+                  </div>
                   ) : (
                     <button
                       onClick={handleSaveToPractice}
