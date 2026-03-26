@@ -104,6 +104,37 @@ export async function POST(request: NextRequest) {
         : (confidence < 0.5 ? 'retry_with_hint' : 'retry_without_hint');
       nextAction = masteryReady ? 'move_it' : 'retry_play_it';
 
+    } else if (chapter === 'move_it') {
+      // Move It: home-based transfer evaluation
+      const homeKey = latestEvent.home_key || 'C';
+      const playedNotes = latestEvent.found_pairs || latestEvent.played_notes || [];
+      const moveItEvents = completedEvents.filter((e: any) => e.chapter === 'move_it');
+      const homesCompleted = [...new Set(moveItEvents.map((e: any) => e.home_key).filter(Boolean))];
+      const allThreeHomes = homesCompleted.includes('C') && homesCompleted.includes('G') && homesCompleted.includes('F');
+      const transferPassed = allThreeHomes;
+
+      const homeWrong = latestEvent.wrong_taps?.length || 0;
+      if (latestEvent.result === 'complete') {
+        if (homeWrong === 0 && !latestEvent.hint_used) confidence = 0.9;
+        else if (homeWrong === 0) confidence = 0.7;
+        else if (homeWrong <= 2) confidence = 0.6;
+        else confidence = 0.4;
+      }
+
+      const stalledNote = latestEvent.stalled_on_note;
+      if (stalledNote) mistakePattern = 'Stalled on: ' + stalledNote + '. ' + mistakePattern;
+
+      evidenceSummary = 'Move It home ' + homeKey + ' ' + latestEvent.result + ': played ' + playedNotes.join('-')
+        + '. ' + (homeWrong === 0 ? 'No wrong taps.' : homeWrong + ' wrong tap(s).')
+        + (stalledNote ? ' Stalled on ' + stalledNote + '.' : '')
+        + ' Homes completed: ' + (homesCompleted.length > 0 ? homesCompleted.join(', ') : 'none')
+        + '. Confidence: ' + Math.round(confidence * 100) + '%';
+
+      masteryReady = transferPassed && confidence >= 0.7;
+      recommendedStrategy = masteryReady ? 'advance_to_own_it'
+        : (allThreeHomes ? 'retry_weak_home' : 'continue_transfer');
+      nextAction = masteryReady ? 'own_it' : 'move_it';
+
     } else {
       evidenceSummary = 'Find It ' + latestEvent.result + ': found '
         + pairsFound.join(' and ') + ' in ' + latestEvent.attempt_count + ' taps. '
@@ -130,6 +161,10 @@ export async function POST(request: NextRequest) {
       evidence_summary: evidenceSummary,
       last_3_confidences: last3,
       updated_at: new Date().toISOString(),
+      ...(chapter === 'move_it' ? {
+        homes_completed: [...new Set(completedEvents.filter((e: any) => e.chapter === 'move_it').map((e: any) => e.home_key).filter(Boolean))],
+        transfer_passed: (() => { const hc = [...new Set(completedEvents.filter((e: any) => e.chapter === 'move_it').map((e: any) => e.home_key).filter(Boolean))]; return hc.includes('C') && hc.includes('G') && hc.includes('F'); })()
+      } : {})
     };
 
     await setState(newState);
