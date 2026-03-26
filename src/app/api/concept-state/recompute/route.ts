@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
 
     const latestEvent = events[events.length - 1];
     const chapter = latestEvent.chapter || 'find_it';
-    const completedEvents = events.filter(e => e.result === 'complete');
+    const completedEvents = events.filter(e => e.result === 'complete' || e.result === 'pass');
     const totalWrongTaps = events.reduce((sum, e) => sum + (e.wrong_taps?.length || 0), 0);
     const hintEverUsed = events.some(e => e.hint_used);
 
     // --- Confidence: based on latest event only ---
     let confidence = 0.5;
-    if (latestEvent.result === 'complete') {
+    if (latestEvent.result === 'complete' || latestEvent.result === 'pass') {
       const wrongCount = latestEvent.wrong_taps?.length || 0;
       if (wrongCount === 0 && !latestEvent.hint_used) confidence = 0.9;
       else if (wrongCount === 0) confidence = 0.7;
