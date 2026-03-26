@@ -135,6 +135,41 @@ export async function POST(request: NextRequest) {
         : (allThreeHomes ? 'retry_weak_home' : 'continue_transfer');
       nextAction = masteryReady ? 'own_it' : 'move_it';
 
+    } else if (chapter === 'own_it') {
+      // Own It: no-look mastery gate (Emerging level)
+      const ownItEvents = completedEvents.filter(e => e.chapter === 'own_it');
+      const cleanOwnPasses = ownItEvents.filter(e => {
+        const wt = e.wrong_taps || [];
+        return (e.result === 'pass' || e.result === 'complete') && wt.length === 0;
+      }).length;
+
+      const latestWrongTaps = (latestEvent.wrong_taps || []).length;
+      const hesitationCount = (latestEvent as any).hesitation_count || 0;
+      const noLookPassed = cleanOwnPasses >= 2;
+
+      if (noLookPassed) {
+        confidence = Math.min(0.85, 0.7 + (cleanOwnPasses * 0.05));
+        recommendedStrategy = 'ownership_validated';
+        nextAction = 'own_it_review';
+        masteryReady = true;
+      } else if (cleanOwnPasses === 1) {
+        confidence = 0.6;
+        recommendedStrategy = 'one_more_clean_pass';
+        nextAction = 'own_it';
+      } else {
+        confidence = Math.max(0.2, 0.4 - (latestWrongTaps * 0.05));
+        recommendedStrategy = latestWrongTaps > 2 ? 'revisit_play_it' : 'retry_own_it';
+        nextAction = 'own_it';
+      }
+
+      const chapterStatus = noLookPassed ? 'passed' : 'active';
+      const ownershipLevel = noLookPassed ? 'emerging' : '';
+
+      evidenceSummary = 'Student ' + (noLookPassed ? 'played' : 'attempted') +
+        ' the major scale pattern without visual cues.' +
+        ' Wrong taps: ' + latestWrongTaps + '. Hesitation: ' + (hesitationCount <= 2 ? 'low' : 'moderate') + '.' +
+        ' Own It status: ' + (noLookPassed ? 'Emerging.' : 'Not yet passed.');
+
     } else {
       evidenceSummary = 'Find It ' + latestEvent.result + ': found '
         + pairsFound.join(' and ') + ' in ' + latestEvent.attempt_count + ' taps. '
@@ -164,6 +199,23 @@ export async function POST(request: NextRequest) {
       ...(chapter === 'move_it' ? {
         homes_completed: [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter((k): k is string => !!k))],
         transfer_passed: (() => { const hc = [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter((k): k is string => !!k))]; return hc.includes('C') && hc.includes('G') && hc.includes('F'); })()
+      } : {}),
+      ...(chapter === 'own_it' ? {
+        chapter_status: (() => {
+          const ownEvents = completedEvents.filter(e => e.chapter === 'own_it');
+          const cleanPasses = ownEvents.filter(e => (e.result === 'pass' || e.result === 'complete') && (e.wrong_taps || []).length === 0).length;
+          return cleanPasses >= 2 ? 'passed' : 'active';
+        })(),
+        ownership_level: (() => {
+          const ownEvents = completedEvents.filter(e => e.chapter === 'own_it');
+          const cleanPasses = ownEvents.filter(e => (e.result === 'pass' || e.result === 'complete') && (e.wrong_taps || []).length === 0).length;
+          return cleanPasses >= 2 ? 'emerging' : '';
+        })(),
+        no_look_passed: (() => {
+          const ownEvents = completedEvents.filter(e => e.chapter === 'own_it');
+          const cleanPasses = ownEvents.filter(e => (e.result === 'pass' || e.result === 'complete') && (e.wrong_taps || []).length === 0).length;
+          return cleanPasses >= 2;
+        })()
       } : {})
     };
 
