@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     } else if (chapter === 'move_it') {
       // Move It: home-based transfer evaluation
       const homeKey = latestEvent.home_key || 'C';
-      const playedNotes = latestEvent.found_pairs || latestEvent.played_notes || [];
+      const playedNotes = latestEvent.found_pairs || [];
       const moveItEvents = completedEvents.filter((e) => e.chapter === 'move_it');
       const homesCompleted = [...new Set(moveItEvents.map((e) => e.home_key).filter(Boolean))];
       const allThreeHomes = homesCompleted.includes('C') && homesCompleted.includes('G') && homesCompleted.includes('F');
