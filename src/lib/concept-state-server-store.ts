@@ -54,7 +54,7 @@ export async function setState(state: ConceptState): Promise<void> {
       evidence_summary: state.evidence_summary,
       last_3_confidences: JSON.stringify(state.last_3_confidences),
       homes_completed: JSON.stringify(state.homes_completed || []),
-      transfer_passed: state.transfer_passed || false,
+      transfer_passed: String(state.transfer_passed || false),
       updated_at: state.updated_at,
     },
     formula
@@ -76,7 +76,7 @@ function fieldsToConceptState(
     evidence_summary: (fields.evidence_summary as string) || '',
     last_3_confidences: safeJsonParse(fields.last_3_confidences as string, []),
     homes_completed: safeJsonParseStrings(fields.homes_completed as string, []),
-    transfer_passed: (fields.transfer_passed as boolean) || false,
+    transfer_passed: String(fields.transfer_passed) === 'true',
     updated_at: (fields.updated_at as string) || '',
   };
 }
