@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       const homeKey = latestEvent.home_key || 'C';
       const playedNotes = latestEvent.found_pairs || [];
       const moveItEvents = completedEvents.filter((e) => e.chapter === 'move_it');
-      const homesCompleted = [...new Set(moveItEvents.map((e) => e.home_key).filter(Boolean))];
+      const homesCompleted = [...new Set(moveItEvents.map((e) => e.home_key).filter((k): k is string => !!k))];
       const allThreeHomes = homesCompleted.includes('C') && homesCompleted.includes('G') && homesCompleted.includes('F');
       const transferPassed = allThreeHomes;
 
@@ -162,8 +162,8 @@ export async function POST(request: NextRequest) {
       last_3_confidences: last3,
       updated_at: new Date().toISOString(),
       ...(chapter === 'move_it' ? {
-        homes_completed: [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter(Boolean))],
-        transfer_passed: (() => { const hc = [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter(Boolean))]; return hc.includes('C') && hc.includes('G') && hc.includes('F'); })()
+        homes_completed: [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter((k): k is string => !!k))],
+        transfer_passed: (() => { const hc = [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter((k): k is string => !!k))]; return hc.includes('C') && hc.includes('G') && hc.includes('F'); })()
       } : {})
     };
 
