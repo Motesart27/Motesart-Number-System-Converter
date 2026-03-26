@@ -52,6 +52,9 @@ export async function addEvent(event: PracticeEvent): Promise<{ created: boolean
     tempo_factor: event.tempo_factor,
     home_key: event.home_key || '',
     stalled_on_note: event.stalled_on_note || '',
+    feel_mode_stage: event.feel_mode_stage || '',
+    visual_support_level: event.visual_support_level || '',
+    hesitation_count: event.hesitation_count || 0,
     created_at: event.created_at,
   });
 
