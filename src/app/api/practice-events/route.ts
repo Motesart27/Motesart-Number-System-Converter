@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
       tempo_factor: body.tempo_factor || 1.0,
       home_key: body.home_key || '',
       stalled_on_note: body.stalled_on_note || '',
+      feel_mode_stage: body.feel_mode_stage || '',
+      visual_support_level: body.visual_support_level || '',
+      hesitation_count: body.hesitation_count || 0,
       created_at: new Date().toISOString(),
     };
 

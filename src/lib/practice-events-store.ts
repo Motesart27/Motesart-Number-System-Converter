@@ -16,6 +16,9 @@ export interface PracticeEvent {
   tempo_factor: number;
   home_key?: string;
   stalled_on_note?: string;
+  feel_mode_stage?: string;
+  visual_support_level?: string;
+  hesitation_count?: number;
   created_at: string;
 }
 
@@ -79,6 +82,9 @@ function fieldsToPracticeEvent(fields: Record<string, unknown>): PracticeEvent {
     tempo_factor: (fields.tempo_factor as number) || 1.0,
     home_key: (fields.home_key as string) || '',
     stalled_on_note: (fields.stalled_on_note as string) || '',
+    feel_mode_stage: (fields.feel_mode_stage as string) || '',
+    visual_support_level: (fields.visual_support_level as string) || '',
+    hesitation_count: (fields.hesitation_count as number) || 0,
     created_at: (fields.created_at as string) || '',
   };
 }

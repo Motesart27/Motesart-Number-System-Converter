@@ -15,6 +15,9 @@ export interface ConceptState {
   last_3_confidences: number[];
   homes_completed?: string[];
   transfer_passed?: boolean;
+  chapter_status?: string;
+  ownership_level?: string;
+  no_look_passed?: boolean;
   updated_at: string;
 }
 
@@ -55,6 +58,9 @@ export async function setState(state: ConceptState): Promise<void> {
       last_3_confidences: JSON.stringify(state.last_3_confidences),
       homes_completed: JSON.stringify(state.homes_completed || []),
       transfer_passed: String(state.transfer_passed || false),
+      chapter_status: state.chapter_status || '',
+      ownership_level: state.ownership_level || '',
+      no_look_passed: String(state.no_look_passed || false),
       updated_at: state.updated_at,
     },
     formula
@@ -77,6 +83,9 @@ function fieldsToConceptState(
     last_3_confidences: safeJsonParse(fields.last_3_confidences as string, []),
     homes_completed: safeJsonParseStrings(fields.homes_completed as string, []),
     transfer_passed: String(fields.transfer_passed) === 'true',
+    chapter_status: (fields.chapter_status as string) || '',
+    ownership_level: (fields.ownership_level as string) || '',
+    no_look_passed: String(fields.no_look_passed) === 'true',
     updated_at: (fields.updated_at as string) || '',
   };
 }
