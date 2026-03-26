@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
       // Move It: home-based transfer evaluation
       const homeKey = latestEvent.home_key || 'C';
       const playedNotes = latestEvent.found_pairs || latestEvent.played_notes || [];
-      const moveItEvents = completedEvents.filter((e: any) => e.chapter === 'move_it');
-      const homesCompleted = [...new Set(moveItEvents.map((e: any) => e.home_key).filter(Boolean))];
+      const moveItEvents = completedEvents.filter((e) => e.chapter === 'move_it');
+      const homesCompleted = [...new Set(moveItEvents.map((e) => e.home_key).filter(Boolean))];
       const allThreeHomes = homesCompleted.includes('C') && homesCompleted.includes('G') && homesCompleted.includes('F');
       const transferPassed = allThreeHomes;
 
@@ -162,8 +162,8 @@ export async function POST(request: NextRequest) {
       last_3_confidences: last3,
       updated_at: new Date().toISOString(),
       ...(chapter === 'move_it' ? {
-        homes_completed: [...new Set(completedEvents.filter((e: any) => e.chapter === 'move_it').map((e: any) => e.home_key).filter(Boolean))],
-        transfer_passed: (() => { const hc = [...new Set(completedEvents.filter((e: any) => e.chapter === 'move_it').map((e: any) => e.home_key).filter(Boolean))]; return hc.includes('C') && hc.includes('G') && hc.includes('F'); })()
+        homes_completed: [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter(Boolean))],
+        transfer_passed: (() => { const hc = [...new Set(completedEvents.filter((e) => e.chapter === 'move_it').map((e) => e.home_key).filter(Boolean))]; return hc.includes('C') && hc.includes('G') && hc.includes('F'); })()
       } : {})
     };
 

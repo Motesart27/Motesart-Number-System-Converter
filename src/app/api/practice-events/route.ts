@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
       attempt_count: body.attempt_count || 1,
       hint_used: body.hint_used || false,
       tempo_factor: body.tempo_factor || 1.0,
+      home_key: body.home_key || '',
+      stalled_on_note: body.stalled_on_note || '',
       created_at: new Date().toISOString(),
     };
 

@@ -14,6 +14,8 @@ export interface PracticeEvent {
   attempt_count: number;
   hint_used: boolean;
   tempo_factor: number;
+  home_key?: string;
+  stalled_on_note?: string;
   created_at: string;
 }
 
@@ -45,6 +47,8 @@ export async function addEvent(event: PracticeEvent): Promise<{ created: boolean
     attempt_count: event.attempt_count,
     hint_used: event.hint_used,
     tempo_factor: event.tempo_factor,
+    home_key: event.home_key || '',
+    stalled_on_note: event.stalled_on_note || '',
     created_at: event.created_at,
   });
 
@@ -73,6 +77,8 @@ function fieldsToPracticeEvent(fields: Record<string, unknown>): PracticeEvent {
     attempt_count: (fields.attempt_count as number) || 0,
     hint_used: (fields.hint_used as boolean) || false,
     tempo_factor: (fields.tempo_factor as number) || 1.0,
+    home_key: (fields.home_key as string) || '',
+    stalled_on_note: (fields.stalled_on_note as string) || '',
     created_at: (fields.created_at as string) || '',
   };
 }
