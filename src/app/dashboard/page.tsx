@@ -31,7 +31,7 @@ const fadeInStyles = `
 `;
 
 
-/* ââ Old engine types (for manual text conversion) ââ */
+/* Ã¢ÂÂÃ¢ÂÂ Old engine types (for manual text conversion) Ã¢ÂÂÃ¢ÂÂ */
 interface MotesartChordResult {
   symbol: string;
   original: string;
@@ -54,7 +54,7 @@ interface OldConversionResult {
   detectedProgressions: { pattern: string; name: string }[];
 }
 
-/* ââ NEW SOM Teaching Edition types (from Gemini) ââ */
+/* Ã¢ÂÂÃ¢ÂÂ NEW SOM Teaching Edition types (from Gemini) Ã¢ÂÂÃ¢ÂÂ */
 interface SomLine {
   type: 'chords' | 'notes' | 'nc' | 'break';
   original?: string;
@@ -187,7 +187,7 @@ function isMusicXmlResult(r: ActiveResult): r is MusicXmlResult {
   return r && (r as MusicXmlResult).format === 'musicxml-som';
 }
 
-/* ââ SOM Legend Card ââ */
+/* Ã¢ÂÂÃ¢ÂÂ SOM Legend Card Ã¢ÂÂÃ¢ÂÂ */
 
 /* ---- MusicXML Result View (OSMD sheet music renderer) ---- */
 function MusicXmlResultView({ data }: { data: MusicXmlResult }) {
@@ -378,8 +378,8 @@ function SomLegendCard() {
 
           <div>
             <p className="text-[#94a3b8] font-semibold mb-1">Chromatic Half-Numbers</p>
-            <p className="font-mono text-[#f97316]">1½ &nbsp; 2½ &nbsp; 4½ &nbsp; 5½ &nbsp; 6½</p>
-            <p className="text-[#64748b] mt-0.5">No 3½ or 7½ (E-F and B-C are natural half steps)</p>
+            <p className="font-mono text-[#f97316]">1Â½ &nbsp; 2Â½ &nbsp; 4Â½ &nbsp; 5Â½ &nbsp; 6Â½</p>
+            <p className="text-[#64748b] mt-0.5">No 3Â½ or 7Â½ (E-F and B-C are natural half steps)</p>
           </div>
 
           <div>
@@ -388,7 +388,7 @@ function SomLegendCard() {
               <p><span className="font-mono text-white">1, 4, 5</span> = diatonic major (no modifier)</p>
               <p><span className="font-mono text-white">m</span> = minor <span className="text-[#64748b]">(e.g., 6m = Am in C)</span></p>
               <p><span className="font-mono text-white">M</span> = non-diatonic major <span className="text-[#64748b]">(e.g., 2M = D major in C)</span></p>
-              <p><span className="font-mono text-white">Â°</span> = diminished &nbsp; <span className="font-mono text-white">+</span> = augmented</p>
+              <p><span className="font-mono text-white">ÃÂ°</span> = diminished &nbsp; <span className="font-mono text-white">+</span> = augmented</p>
             </div>
           </div>
 
@@ -410,7 +410,7 @@ function SomLegendCard() {
   );
 }
 
-/* ââ SOM Teaching Edition Renderer ââ */
+/* Ã¢ÂÂÃ¢ÂÂ SOM Teaching Edition Renderer Ã¢ÂÂÃ¢ÂÂ */
 function SomTeachingEditionView({ data, converterMode, setConverterMode }: { data: SomTeachingEdition; converterMode: 'quick' | 'curriculum' | 'compliance'; setConverterMode: (m: 'quick' | 'curriculum' | 'compliance') => void }) {
   const [viewMode, setViewMode] = useState<'original' | 'numbers' | 'side-by-side'>('side-by-side');
 
@@ -509,7 +509,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 <div className="p-3">
                   {(data.sections || []).map((sec, si) => (
                     <div key={si} className="mb-4">
-                      <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} — Key: {sec.key}</p>
+                      <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} â Key: {sec.key}</p>
                       {(sec.subsections || []).map((sub, ssi) => (
                         <div key={ssi} className="mb-2">
                           <p className="text-xs font-bold text-[#334155] mb-1">{sub.name}</p>
@@ -522,7 +522,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
               </div>
               {/* Arrow */}
               <div className="flex items-center justify-center w-8 shrink-0">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6366f1] to-[#06b6d4] flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/30">→</div>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6366f1] to-[#06b6d4] flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/30">â</div>
               </div>
               {/* Numbers */}
               <div className="flex-1 bg-[#111827] border border-[#06b6d4]/15 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.05)]">
@@ -533,7 +533,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 <div className="p-3">
                   {(data.sections || []).map((sec, si) => (
                     <div key={si} className="mb-4">
-                      <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} — Key: 1 = {sec.key}</p>
+                      <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">{sec.name} â Key: 1 = {sec.key}</p>
                       {(sec.subsections || []).map((sub, ssi) => (
                         <div key={ssi} className="mb-2">
                           <p className="text-xs font-bold text-[#334155] mb-1">{sub.name}</p>
@@ -558,7 +558,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 {(data.sections || []).map((sec, si) => (
                   <div key={si} className="mb-4">
                     <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest mb-2">
-                      {sec.name} — {viewMode === 'original' ? 'Key: ' + sec.key : 'Key: 1 = ' + sec.key}
+                      {sec.name} â {viewMode === 'original' ? 'Key: ' + sec.key : 'Key: 1 = ' + sec.key}
                     </p>
                     <p className="font-mono text-[11px] text-[#475569] mb-2">{sec.scaleReference || ''}</p>
                     {(sec.subsections || []).map((sub, ssi) => (
@@ -582,7 +582,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
           <div className="bg-[#6366f1]/8 border border-[#6366f1]/15 rounded-lg p-3">
             <p className="text-[10px] font-semibold text-[#6366f1] uppercase tracking-wider mb-1">Key Detected</p>
             <p className="text-lg font-extrabold text-white">{data.detectedKey || data.metadata?.keys?.[0] || 'Unknown'} Major</p>
-            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + (data.metadata?.keys || []).join(' → ') : 'No key changes'}</p>
+            <p className="text-[10px] text-[#64748b] mt-0.5">{(data.metadata?.keys?.length || 0) > 1 ? 'Key changes: ' + (data.metadata?.keys || []).join(' â ') : 'No key changes'}</p>
           </div>
 
           {/* Number System Home + Scale Map */}
@@ -606,9 +606,9 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 {(data.chordTranslations || []).map((ct: ChordTranslation, i: number) => (
                   <div key={i} className="flex items-center gap-1.5 text-xs">
                     <span className="font-mono font-semibold text-[#f97316] min-w-[28px]">{ct.original}</span>
-                    <span className="text-[#475569] text-[10px]">→</span>
+                    <span className="text-[#475569] text-[10px]">â</span>
                     <span className={"font-mono font-bold min-w-[28px] " + (ct.specialCase ? "text-[#eab308]" : "text-[#06b6d4]")}>{ct.converted}</span>
-                    {ct.specialCase && <span className="text-[8px] text-[#eab308]">⚠</span>}
+                    {ct.specialCase && <span className="text-[8px] text-[#eab308]">â </span>}
                   </div>
                 ))}
               </div>
@@ -642,7 +642,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
               <div className="space-y-1.5">
                 {(data.specialCases || []).map((sc: string, i: number) => (
                   <div key={i} className="flex items-start gap-1.5">
-                    <span className="text-[#eab308] text-[10px] mt-0.5">⚠</span>
+                    <span className="text-[#eab308] text-[10px] mt-0.5">â </span>
                     <p className="text-[10px] text-[#94a3b8] leading-tight">{sc}</p>
                   </div>
                 ))}
@@ -656,7 +656,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
               <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions Made</p>
               <div className="space-y-1">
                 {(data.assumptions || []).map((a: string, i: number) => (
-                  <p key={i} className="text-[10px] text-[#475569] leading-tight">• {a}</p>
+                  <p key={i} className="text-[10px] text-[#475569] leading-tight">â¢ {a}</p>
                 ))}
               </div>
             </div>
@@ -666,24 +666,24 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
           {data._validation && (
             <div className={"border rounded-lg p-2 " + (data._validation.valid ? "bg-[#22c55e]/5 border-[#22c55e]/15" : "bg-[#ef4444]/5 border-[#ef4444]/15")}>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px]">{data._validation.valid ? '✅' : '⚠️'}</span>
+                <span className="text-[10px]">{data._validation.valid ? 'â' : 'â ï¸'}</span>
                 <p className={"text-[9px] font-semibold " + (data._validation.valid ? "text-[#22c55e]" : "text-[#ef4444]")}>{data._validation.valid ? 'All checks passed' : data._validation.warnings.length + ' warning(s)'}</p>
               </div>
             </div>
           )}
         </div>
     </div>
-      {/* HOW WE CONVERTED THIS — Collapsible Drawer */}
+      {/* HOW WE CONVERTED THIS â Collapsible Drawer */}
       <div className="mt-4">
         <button
           onClick={() => setShowExplanation(!showExplanation)}
           className="w-full flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:bg-white/[0.05] transition-all"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm">🔍</span>
+            <span className="text-sm">ð</span>
             <span className="text-xs font-semibold text-white">How we converted this</span>
           </div>
-          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>▼</span>
+          <span className={"text-[#64748b] text-xs transition-transform " + (showExplanation ? "rotate-180" : "")}>â¼</span>
         </button>
         {showExplanation && (
           <div className="mt-2 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 space-y-4">
@@ -712,10 +712,10 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                   {(data.chordTranslations || []).map((ct: ChordTranslation, i: number) => (
                     <div key={i} className={"flex items-center gap-2 text-xs px-2 py-1.5 rounded " + (ct.specialCase ? "bg-[#eab308]/8 border border-[#eab308]/15" : "bg-white/[0.02]")}>
                       <span className="font-mono font-bold text-[#f97316] w-[36px]">{ct.original}</span>
-                      <span className="text-[#475569]">→</span>
+                      <span className="text-[#475569]">â</span>
                       <span className="font-mono font-bold text-[#06b6d4] w-[36px]">{ct.converted}</span>
                       <span className="text-[10px] text-[#64748b] flex-1 truncate">{ct.reason}</span>
-                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">⚠</span>}
+                      {ct.specialCase && <span className="text-[9px] text-[#eab308]">â </span>}
                     </div>
                   ))}
                 </div>
@@ -728,7 +728,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider mb-2">Assumptions & Simplifications</p>
                 <div className="space-y-1">
                   {(data.assumptions || []).map((a: string, i: number) => (
-                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">• {a}</p>
+                    <p key={i} className="text-[10px] text-[#94a3b8] leading-relaxed">â¢ {a}</p>
                   ))}
                 </div>
               </div>
@@ -741,7 +741,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 <div className="space-y-1">
                   {(data._validation?.warnings || []).map((w: {type: string; message: string}, i: number) => (
                     <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                      <span className="text-[#ef4444] mt-0.5">⚠</span>
+                      <span className="text-[#ef4444] mt-0.5">â </span>
                       <span className="text-[#94a3b8]">{w.message}</span>
                     </div>
                   ))}
@@ -755,7 +755,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
                 <p className="text-[10px] font-semibold text-[#22c55e] uppercase tracking-wider mb-2">Confidence Factors</p>
                 <div className="space-y-1">
                   {(data.conversionConfidence?.reasons || []).map((r: string, i: number) => (
-                    <p key={i} className="text-[10px] text-[#94a3b8]">• {r}</p>
+                    <p key={i} className="text-[10px] text-[#94a3b8]">â¢ {r}</p>
                   ))}
                 </div>
               </div>
@@ -767,7 +767,7 @@ function SomTeachingEditionView({ data, converterMode, setConverterMode }: { dat
   );
 }
 
-/* ââ Old-format result renderer (for manual text conversion) ââ */
+/* Ã¢ÂÂÃ¢ÂÂ Old-format result renderer (for manual text conversion) Ã¢ÂÂÃ¢ÂÂ */
 function OldResultView({ result, originalPreview }: { result: OldConversionResult; originalPreview: boolean }) {
   return (
     <div className="space-y-4">
@@ -784,10 +784,10 @@ function OldResultView({ result, originalPreview }: { result: OldConversionResul
                   {line.motesartChords && line.motesartChords.length > 0 && (
                     <div className="flex flex-wrap gap-4 px-2 py-1.5 bg-[#1e293b]/30 rounded">
                       {line.motesartChords.map((chord, ci) => {
-                        const numberMatch = chord.symbol.match(/^(\d½?)/);
+                        const numberMatch = chord.symbol.match(/^(\dÂ½?)/);
                         const num = numberMatch?.[1] || '';
                         const rest = chord.symbol.slice(num.length);
-                        const isHalf = num.includes('½');
+                        const isHalf = num.includes('Â½');
                         const baseNum = parseInt(num[0]) || 1;
                         const colors: Record<number, string> = {
                           1: '#06b6d4', 2: '#6366f1', 3: '#a855f7',
@@ -832,9 +832,9 @@ function OldResultView({ result, originalPreview }: { result: OldConversionResul
   );
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
    MAIN DASHBOARD
-   ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 export default function Dashboard() {
   const [originalPreview, setOriginalPreview] = useState(false);
   const [chatInput, setChatInput] = useState('');
@@ -889,7 +889,7 @@ export default function Dashboard() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  /* ââ Convert / Process ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Convert / Process Ã¢ÂÂÃ¢ÂÂ */
   const handleConvert = useCallback(async () => {
     setPracticeAssetId(null);
     setPracticeAssetInfo(null);
@@ -946,7 +946,7 @@ export default function Dashboard() {
           try {
             result = await res.json();
           } catch {
-            throw new Error('Server returned an invalid response — the file may be too large or processing timed out.');
+            throw new Error('Server returned an invalid response â the file may be too large or processing timed out.');
           }
 
           if (res.ok) {
@@ -974,7 +974,7 @@ export default function Dashboard() {
           const isTimeout = fetchErr instanceof Error && fetchErr.name === 'AbortError';
           setUploadedFiles(prev => prev.map(f =>
             f.name === fileToProcess.name
-              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out â try again or use a smaller file' : (fetchErr instanceof Error ? fetchErr.message : 'Processing failed â please try again') }
+              ? { ...f, status: 'error' as const, errorMessage: isTimeout ? 'Processing timed out Ã¢ÂÂ try again or use a smaller file' : (fetchErr instanceof Error ? fetchErr.message : 'Processing failed Ã¢ÂÂ please try again') }
               : f
           ));
         }
@@ -986,16 +986,16 @@ export default function Dashboard() {
     }
   }, [mode, manualInput, selectedKey, uploadedFiles, converterMode]);
 
-  /* ââ Build plain-text content for CSV/TEXT exports ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Build plain-text content for CSV/TEXT exports Ã¢ÂÂÃ¢ÂÂ */
   const buildTextContent = (): string => {
     if (!activeResult) return '';
     let content = '';
     if (isSomTeachingEdition(activeResult)) {
       const d = activeResult;
-      content += `${d.title} â ${d.subtitle}\n`;
-      content += `Keys: ${d.metadata.keys.join(' â ')}  Meter: ${d.metadata.meter}  Tempo: ${d.metadata.tempo}  Artist: ${d.metadata.artist}\n\n`;
+      content += `${d.title} Ã¢ÂÂ ${d.subtitle}\n`;
+      content += `Keys: ${d.metadata.keys.join(' Ã¢ÂÂ ')}  Meter: ${d.metadata.meter}  Tempo: ${d.metadata.tempo}  Artist: ${d.metadata.artist}\n\n`;
       d.sections.forEach(sec => {
-        content += `${sec.name} â Key: 1 = ${sec.key}\n`;
+        content += `${sec.name} Ã¢ÂÂ Key: 1 = ${sec.key}\n`;
         content += `Scale: ${sec.scaleReference}\n\n`;
         sec.subsections.forEach(sub => {
           content += `  ${sub.name}\n`;
@@ -1022,7 +1022,7 @@ export default function Dashboard() {
     return content;
   };
 
-  /* ââ Build styled HTML for PDF export ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Build styled HTML for PDF export Ã¢ÂÂÃ¢ÂÂ */
   const buildStyledPdfHtml = (logoDataUrl: string): string => {
     if (!activeResult || !isSomTeachingEdition(activeResult)) return '';
     const d = activeResult;
@@ -1106,7 +1106,7 @@ export default function Dashboard() {
     </div>`;
   };
 
-  /* ââ Helper: load logo as base64 data URL via same-origin proxy ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Helper: load logo as base64 data URL via same-origin proxy Ã¢ÂÂÃ¢ÂÂ */
   const loadLogoBase64 = async (): Promise<string> => {
     try {
       const res = await fetch('/api/logo');
@@ -1124,7 +1124,7 @@ export default function Dashboard() {
     }
   };
 
-  /* ââ Export ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Export Ã¢ÂÂÃ¢ÂÂ */
   const handleExport = async (format: 'pdf' | 'csv' | 'text' | 'xml') => {
     if (!activeResult) return;
 
@@ -1171,7 +1171,7 @@ export default function Dashboard() {
         }
       }
     } else if (format === 'xml' && (activeResult as any)?.outputXml) {
-      // XML export — download the converted MusicXML
+      // XML export â download the converted MusicXML
       const xmlContent = (activeResult as any).outputXml;
       const blob = new Blob([xmlContent], { type: 'application/xml' });
       const url = URL.createObjectURL(blob);
@@ -1236,7 +1236,7 @@ export default function Dashboard() {
 
 
 
-  /* ââ Chat ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Chat Ã¢ÂÂÃ¢ÂÂ */
   const handleChatSend = async () => {
     if (!chatInput.trim() || isChatLoading) return;
     const userMessage = { role: 'user', text: chatInput };
@@ -1279,10 +1279,10 @@ export default function Dashboard() {
 
   const KEYS = ['Auto-detect','C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
 
-  /* ââ Determine key display ââ */
+  /* Ã¢ÂÂÃ¢ÂÂ Determine key display Ã¢ÂÂÃ¢ÂÂ */
   const keyDisplay = activeResult
     ? isSomTeachingEdition(activeResult)
-      ? activeResult.metadata?.keys?.join(' â ')
+      ? activeResult.metadata?.keys?.join(' Ã¢ÂÂ ')
       : activeResult.key?.tonic
     : null;
 
@@ -1430,8 +1430,8 @@ export default function Dashboard() {
               </div>
               <div className="pt-3 border-t border-[#1e293b]">
                 <p className="text-xs text-[#64748b] mb-2">Chromatic reference</p>
-                <p className="text-xs font-mono text-[#f97316]">1½ 2½ 4½ 5½ 6½</p>
-                <p className="text-xs text-[#64748b] mt-1">No 3½ or 7½</p>
+                <p className="text-xs font-mono text-[#f97316]">1Â½ 2Â½ 4Â½ 5Â½ 6Â½</p>
+                <p className="text-xs text-[#64748b] mt-1">No 3Â½ or 7Â½</p>
               </div>
             </div>
           </div>
@@ -1681,7 +1681,7 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {/* Save to Practice — only for XML results */}
+              {/* Save to Practice â only for XML results */}
               {activeResult && isMusicXmlResult(activeResult) && (
                 <div className="mt-4 pt-4 border-t border-[#1e293b]">
                   {practiceAssetId ? (
@@ -1699,7 +1699,6 @@ export default function Dashboard() {
                       Ready for assignment in Practice
                       </div>
                     </div>
-                  </div>
                   ) : (
                     <button
                       onClick={handleSaveToPractice}
