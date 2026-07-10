@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 const ALLOWED_ORIGINS = [
   'https://motesart-frontend-production.up.railway.app',
+  'https://school-of-motesart.netlify.app',
   'http://localhost:5173',
   'http://localhost:3000',
 ];

@@ -27,9 +27,9 @@ export async function getState(
 ): Promise<ConceptState | null> {
   const formula =
     'AND({student_instrument_id} = "' +
-    studentInstrumentId +
+    studentInstrumentId.replace(/"/g, '\\"') +
     '", {concept_id} = "' +
-    conceptId +
+    conceptId.replace(/"/g, '\\"') +
     '")';
   const records = await findRecords(TABLE_NAME, formula, 1);
   if (records.length === 0) return null;
@@ -39,9 +39,9 @@ export async function getState(
 export async function setState(state: ConceptState): Promise<void> {
   const formula =
     'AND({student_instrument_id} = "' +
-    state.student_instrument_id +
+    state.student_instrument_id.replace(/"/g, '\\"') +
     '", {concept_id} = "' +
-    state.concept_id +
+    state.concept_id.replace(/"/g, '\\"') +
     '")';
   await upsertRecord(
     TABLE_NAME,

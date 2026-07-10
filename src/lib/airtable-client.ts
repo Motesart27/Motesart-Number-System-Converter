@@ -1,8 +1,8 @@
 const AIRTABLE_BASE_URL = 'https://api.airtable.com/v0';
 
 function getConfig() {
-  const apiKey = process.env.AIRTABLE_API_KEY;
-  const baseId = process.env.AIRTABLE_BASE_ID;
+  const apiKey = process.env.AIRTABLE_API_KEY?.trim().replace(/^=+/, '').trim();
+  const baseId = process.env.AIRTABLE_BASE_ID?.trim().replace(/^=+/, '').trim();
   if (!apiKey || !baseId) {
     throw new Error('Missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID env vars');
   }
